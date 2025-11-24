@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+	<body  th:replace="~{layouts/layout :: base('Home')}">
+		<div th:fragment="content">
+			<h1>Hello, <span th:text="${name}">Name</span>!</h1>
+			<p>This is a simple Thymeleaf page served by Spring Boot.</p>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<body>
+		<div th:fragment="searchResults">
+			<table>
+				<thead>
+					<tr>
+						<th>
+							<a href="#" onclick="sortResults('protocol'); return false;">Protocol</a>
+							<span th:if="${sortField == 'protocol'}">
+								<span th:if="${sortDirection == 'ASC'}">▲</span>
+								<span th:if="${sortDirection == 'DESC'}">▼</span>
+							</span>
+						</th>
+						<th>
+							<a href="#" onclick="sortResults('indexer'); return false;">Indexer</a>
+							<span th:if="${sortField == 'indexer'}">
+								<span th:if="${sortDirection == 'ASC'}">▲</span>
+								<span th:if="${sortDirection == 'DESC'}">▼</span>
+							</span>
+						</th>
+						<th>
+							<a href="#" onclick="sortResults('title'); return false;">Title</a>
+							<span th:if="${sortField == 'title'}">
+								<span th:if="${sortDirection == 'ASC'}">▲</span>
+								<span th:if="${sortDirection == 'DESC'}">▼</span>
+							</span>
+						</th>
+						<th>
+							<a href="#" onclick="sortResults('seeders'); return false;">Seeders</a>
+							<span th:if="${sortField == 'seeders'}">
+								<span th:if="${sortDirection == 'ASC'}">▲</span>
+								<span th:if="${sortDirection == 'DESC'}">▼</span>
+							</span>
+						</th>
+						<th>
+							<a href="#" onclick="sortResults('leechers'); return false;">Leechers</a>
+							<span th:if="${sortField == 'leechers'}">
+								<span th:if="${sortDirection == 'ASC'}">▲</span>
+								<span th:if="${sortDirection == 'DESC'}">▼</span>
+							</span>
+						</th>
+						<th>Download Url</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="result: ${searchResults}">
+                        <td th:text="${result.protocol}"></td>
+                        <td th:text="${result.indexer}"></td>
+                        <td th:text="${result.title}"></td>
+                        <td th:text="${result.seeders}"></td>
+                        <td th:text="${result.leechers}"></td>
+                        <td>
+                            <button type="button" th:data-url="${result.guid}" th:data-protocol="${result.protocol}" onclick="download(this, '/search/result/download')">
+                                Download
+                            </button>
+                        </td>
+                    </tr>
+				</tbody>
+			</table>
+
+			<nav th:if="${page.totalPages > 0}">
+				<ul>
+					<li th:class="${page.first} ? 'disabled'">
+						<a href="#"  th:onclick="|fetchPage('${page.number - 1}')|">Previous</a>
+					</li>
+
+					<li th:each="i : ${#numbers.sequence(1, page.totalPages)}" th:class="${currentPage == i ? 'active' : ''}">
+						<a href="#"  th:onclick="|fetchPage('${i - 1}')|" th:text="${i}"></a>
+					</li>
+
+					<li th:class="${page.last} ? 'disabled'">
+						<a href="#" th:onclick="|fetchPage('${page.number + 1}')|">Next</a>
+					</li>
+				</ul>
+			</nav>
+
+		</div>
+	</body>
+</html>

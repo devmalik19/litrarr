@@ -1,0 +1,181 @@
+/* CSS for elements inside the main content */
+
+h2
+{
+	border-bottom: 2px solid #ccc;
+	margin: 0;
+	padding-bottom: 0.35em;
+}
+
+.grid
+{
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	flex-grow: 1;
+}
+
+.card
+{
+	display: flex;
+	position: relative;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	cursor: pointer;
+	border: 1px solid #ddd;
+	border-radius: var(--border-radius);
+	box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+
+	margin: 20px;
+	min-height: 160px;
+}
+
+.card:hover, .card:focus
+{
+	color:var(--main-color);
+	background-color: var(--hover-color);
+}
+
+.card-icon
+{
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 30px;
+}
+
+/* --- Toggle Switch Styles --- */
+.toggle-switch
+{
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+}
+
+.toggle-switch input
+{
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider
+{
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before
+{
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider
+{
+    background-color: var(--sub-color);
+}
+
+input:checked + .slider:before
+{
+    transform: translateX(26px);
+}
+
+.slider.round
+{
+    border-radius: 34px;
+}
+
+.slider.round:before
+{
+    border-radius: 50%;
+}
+
+.poster-grid
+{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.poster
+{
+    display: block;
+    position: relative;
+    text-decoration: none;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease;
+    aspect-ratio: 2 / 3;
+}
+
+.poster:hover
+{
+    transform: scale(1.05);
+}
+
+.poster-image
+{
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+.poster-details
+{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px 10px;
+    background: linear-gradient(to top, rgba(53, 53, 53, 0.95) 0%, rgba(53, 53, 53, 0.7) 50%, transparent 100%);
+    text-align: center;
+}
+
+.poster-title
+{
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Truncates long movie names */
+}
+
+@media screen and (max-width:768px)
+{
+	h2
+	{
+		margin: 0;
+	}
+
+	.grid
+	{
+		grid-template-columns: 1fr;
+	}
+
+	.card
+    {
+    	margin: 20px 0 0 0;
+    }
+}
