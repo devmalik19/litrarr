@@ -1,0 +1,106 @@
+/* CSS for all dialog and forms */
+
+.dialog
+{
+	position: absolute;
+	top: 10vh;
+	left: 10vw;
+	margin: 0;
+	padding: 10px;
+	width: 80vw;
+	border: 1px solid rgba(0,0,0);
+	border-radius: var(--border-radius);
+	box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+	background-color: var(--main-color);
+}
+
+#dialog form
+{
+    height: 100%;
+    width: 100%;;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.form-header
+{
+	display: flex;
+	padding: 10px;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    border-bottom: 2px solid #ccc;
+}
+
+.form-header span
+{
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.form-body
+{
+	display: grid;
+    padding: 10px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.form-row
+{
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.form-row label
+{
+	width: 140px;
+	flex: 0 0 140px;
+}
+
+.form-row input
+{
+	flex: 1 1 auto;
+	padding: 10px 12px;
+	background: #fff;
+	font-size: 14px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	transition: border-color .12s, box-shadow .12s;
+	box-sizing: border-box;
+}
+
+.form-body input:focus
+{
+	outline: none;
+	border-color: #6366f1; /* subtle accent */
+	box-shadow: 0 0 0 4px rgba(99,102,241,0.08);
+}
+
+.form-footer
+{
+    display: flex;
+    padding: 10px;
+    justify-content: flex-end;
+    gap: 10px;
+	border-top: 2px solid #ccc;
+}
+
+@media screen and (max-width:768px)
+{
+	.form-row
+	{
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.form-row > label
+	{
+		width: auto;
+		flex: none;
+		margin-bottom: 6px;
+    }
+}

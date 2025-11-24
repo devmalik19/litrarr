@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<body th:replace="~{layouts/layout :: base('General')}">
+		<div th:fragment="content">
+			<h2>General Settings</h2>
+
+			<form th:action="@{/settings/save/library}" method="post">
+				<div class="form-row">
+					<label for="comics">Comics</label>
+					<input id="comics" name="comics"  th:value="${comics}"  placeholder="/comics" required/>
+				</div>
+
+				<div class="form-row">
+					<label for="manga">Manga</label>
+					<input id="manga" name="manga"  th:value="${manga}"   placeholder="/manga" required/>
+				</div>
+
+				<div class="form-row">
+					<label for="books">Books</label>
+					<input id="books" name="books"  th:value="${books}"   placeholder="/books" required/>
+				</div>
+
+				<div class="form-row">
+					<label for="audiobooks">Audiobooks</label>
+					<input id="audiobooks" name="audiobooks"  th:value="${audiobooks}"   placeholder="/audiobooks" required/>
+				</div>
+
+				<button type="submit">Save</button>
+			</form>
+
+			<form th:action="@{/settings/save/priority}" method="post">
+				<ul id="sortable">
+					<li class="ui-state-default" th:each="service : ${services}">
+						<input type="checkbox" name="enabled" th:value="${service}" checked="checked" />
+						<span th:text="${service}">Service Name</span>
+						<input type="hidden" name="order" th:value="${service}" />
+					</li>
+				</ul>
+				<button type="submit">Save</button>
+			</form>
+
+			<th:block th:replace="~{fragments/jquery :: sortable}"></th:block>
+
+		</div>
+	</body>
+</html>
