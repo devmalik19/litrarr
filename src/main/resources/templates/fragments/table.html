@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<body>
+		<div th:fragment="searchResults">
+			<table>
+				<thead>
+					<tr>
+						<th th:each="header : ${headers}">
+							<a href="#"
+							   onclick="sortResults(this)"
+							   th:data-header="${header}"
+							   th:text="${#strings.capitalize(header)}">Header</a>
+
+							<span th:if="${sortField == header}">
+								<span th:if="${sortDirection == 'ASC'}">▲</span>
+								<span th:if="${sortDirection == 'DESC'}">▼</span>
+							</span>
+						</th>
+
+						<th:block th:if="${isMetadataResult ?: false}">
+							<th>Download</th>
+						</th:block>
+						<th:block th:if="${isMetadataResult ?: true}">
+							<th>Search</th>
+						</th:block>
+
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="result: ${searchResults}">
+						<td th:each="header : ${headers}"
+							th:text="${result[header]}">
+						</td>
+
+						<th:block th:if="${isMetadataResult ?: false}">
+							<td>
+								<button type="button"
+										th:data-url="${result.guid}"
+										th:data-protocol="${result.protocol}"
+										onclick="download(this)">
+									Download
+								</button>
+							</td>
+						</th:block>
+						<th:block th:if="${isMetadataResult ?: true}">
+							<td>
+								<button type="button"
+										th:data-payload='${result}'
+										onclick="addSearch(this)">
+									Search
+								</button>
+							</td>
+						</th:block>
+
+                    </tr>
+				</tbody>
+			</table>
+
+			<div id="endpoint" th:data-endpoint="${endpoint}" hidden></div>
+			<nav th:if="${page.totalPages > 0}">
+				<ul>
+					<li th:class="${page.first} ? 'disabled'">
+						<a href="#"  th:onclick="|fetchPage('${page.number - 1}')|">Previous</a>
+					</li>
+
+					<li th:each="i : ${#numbers.sequence(1, page.totalPages)}" th:class="${currentPage == i ? 'active' : ''}">
+						<a href="#"  th:onclick="|fetchPage('${i - 1}')|" th:text="${i}"></a>
+					</li>
+
+					<li th:class="${page.last} ? 'disabled'">
+						<a href="#" th:onclick="|fetchPage('${page.number + 1}')|">Next</a>
+					</li>
+				</ul>
+			</nav>
+
+		</div>
+	</body>
+</html>

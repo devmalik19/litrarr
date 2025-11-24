@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="base(pageTitle)" lang="en">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title th:text="${pageTitle}">Litrarr</title>
+
+		<link rel="icon" type="image/png" th:href="@{/images/logos/favicon-96x96.png}" sizes="96x96" />
+		<link rel="icon" type="image/svg+xml" th:href="@{/images/logos/favicon.svg}" />
+		<link rel="shortcut icon" th:href="@{/images/logos/favicon.ico}" />
+		<link rel="apple-touch-icon" sizes="180x180" th:href="@{/images/logos/apple-touch-icon.png}" />
+		<link rel="manifest" th:href="@{/images/logos/site.webmanifest}"/>
+
+		<link rel="stylesheet" th:href="@{/css/styles.css}" />
+		<link rel="stylesheet" th:href="@{/css/header.css}" />
+		<link rel="stylesheet" th:href="@{/css/sidebar.css}" />
+		<link rel="stylesheet" th:href="@{/css/content.css}" />
+        <link rel="stylesheet" th:href="@{/css/dialog.css}" />
+		<link rel="stylesheet" th:href="@{/css/footer.css}" />
+
+		<script th:src="@{/js/main.js}"></script>
+		<script th:src="@{/js/search.js}"></script>
+	</head>
+	<body>
+		<div th:replace="~{fragments/header :: header}"></div>
+
+		<div class="layout">
+			<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+			<main class="content" th:insert="~{::content}"></main>
+		</div>
+
+		<!--div th:replace="~{fragments/footer :: footer}"></div-->
+
+	</body>
+</html>

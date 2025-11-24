@@ -1,0 +1,68 @@
+server:
+    servlet:
+        context-path: ${BASE_URL:/}
+    port: ${PORT:8021}
+
+spring:
+    application:
+        name: litrarr
+    thymeleaf:
+        cache: false
+    flyway:
+        baseline-on-migrate: true
+    profiles:
+        validate: false
+        include: "${USER:NONE}"
+        active: "sqlite"
+
+logging:
+    level:
+        root: ${LOGGING_LEVEL:INFO}
+
+app:
+    path:
+        config: "${CONFIG_PATH:/config}"
+        download: "${DOWNLOAD_PATH:/downloads}"
+        library: "${LIBRARY_PATH:/library}"
+    encryption:
+        key: ${ENCRYPTION_KEY}
+    user-agent: ${USER_AGENT:"Litrarr/1.0"}
+
+---
+
+spring:
+    config:
+        activate:
+            on-profile: "sqlite"
+    datasource:
+        url: "jdbc:sqlite:${app.path.config}/litrarr.db"
+        driver-class-name: org.sqlite.JDBC
+    jpa:
+        database-platform: "org.hibernate.community.dialect.SQLiteDialect"
+
+---
+
+spring:
+    config:
+        activate:
+            on-profile: "mariadb"
+    datasource:
+        url: ${DB_URL:"jdbc:mariadb://localhost:3306/litrarr"}
+        username: ${DB_USER:mariadb}
+        password: ${DB_PASSWORD:mariadb}
+        driver-class-name: org.mariadb.jdbc.Driver
+
+    jpa:
+        database-platform: "org.hibernate.dialect.MariaDBDialect"
+
+
+---
+
+spring:
+    config:
+        activate:
+            on-profile: "${USER}"
+    security:
+        user:
+            name: ${USER}
+            password: ${PASSWORD}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+	<body th:replace="~{layouts/layout :: base('Search Indexes')}">
+		<div th:fragment="content">
+			<h2>Search Indexes</h2>
+
+			<div class="grid">
+				<div class="card" data-id="prowlarr" onclick="toggleDialogWindow(this)">
+					Prowlarr
+                    <a  class="card-icon" id="syncButton" onclick="sync(event, '/settings/sync')">
+						🔄
+                    </a>
+				</div>
+			</div>
+
+            <h2> </h2>
+            <div id="indexes">
+                <div class="grid"  th:fragment="indexes">
+					<div class="card" th:each="index: ${indexes}">
+						<span th:text="${index.name}">Index Name</span>
+						<label class="toggle-switch">
+							<input type="checkbox"
+								   th:checked="${index.enable}"
+								   th:onclick="|update(event, ${index.id}, ${index.enable})|">
+							<span class="slider round"></span>
+						</label>
+					</div>
+                </div>
+            </div>
+
+			<div th:replace="~{fragments/dialog :: dialog('Add Prowlarr', prowlarr, '/settings/save/prowlarr?redirect=clients', '/settings/indexes/check/prowlarr')}">
+				<div class="form-body" th:fragment="prowlarr"  th:object="${settings}">
+
+					<div class="form-row">
+						<label for="name_prowlarr">Name</label>
+						<input id="name_prowlarr" name="name"  th:field="*{name}"  placeholder="Prowlarr" required/>
+					</div>
+
+					<div class="form-row">
+						<label for="url_prowlarr">URL</label>
+						<input id="url_prowlarr" name="url"  th:field="*{url}"  type="url" placeholder="http://localhost:9696" required/>
+					</div>
+
+					<div class="form-row">
+						<label for="apiKey_prowlarr">API Key</label>
+						<input id="apiKey_prowlarr" name="apiKey"  th:value="*{apiKey}"  type="password" required/>
+					</div>
+
+                    <div class="form-row">
+                        <label for="tag_prowlarr">Tag</label>
+                        <input id="tag_prowlarr" name="category"  th:field="*{category}"  />
+                    </div>
+
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

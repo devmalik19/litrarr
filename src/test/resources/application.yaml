@@ -1,0 +1,21 @@
+spring:
+    application:
+        name: litrarr
+    profiles:
+        active: "test"
+    datasource:
+        url: "jdbc:sqlite::memory:"
+        driver-class-name: org.sqlite.JDBC
+    jpa:
+        hibernate:
+            ddl-auto: update
+        database-platform: "org.hibernate.community.dialect.SQLiteDialect"
+
+app:
+    path:
+        config: "/config"
+        download: "/downloads"
+        library: "/library"
+    encryption:
+        key: "ENCRYPTION_KEY"
+    user-agent: "Singlarr/1.0"

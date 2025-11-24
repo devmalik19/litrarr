@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<body>
+		<th:block th:fragment="sortable">
+			<link rel="stylesheet" th:href="@{/css/jquery-ui.min.css}" />
+			<script th:src="@{/js/jquery.min.js}"></script>
+			<script th:src="@{/js/jquery-ui.min.js}"></script>
+			<style>
+				#sortable
+				{
+					padding: 0;
+				}
+				#sortable li
+				{
+					display : flex;
+					align-items: center;
+					height: var(--header-height);
+				}
+				#sortable li span
+				{
+					cursor:pointer;
+				}
+			</style>
+			<script>
+				$(function(){
+					$("#sortable").sortable();
+				});
+			</script>
+		</th:block>
+	</body>
+</html>

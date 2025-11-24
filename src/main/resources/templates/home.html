@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body  th:replace="~{layouts/layout :: base('Home')}">
+<div th:fragment="content">
+
+	<label for="title">Title</label>
+	<input id="title" placeholder="Enter title..."/>
+
+	<label for="author">Author</label>
+	<input id="author" placeholder="Enter author..."/>
+
+	<label for="publisher">Publisher</label>
+	<input id="publisher" placeholder="Enter publisher..."/>
+
+	<button type="button" onclick="metadataSearch(this)">
+		Metadata Search
+	</button>
+
+	<!-- Only for testing -->
+	<br />
+	<button type="button" onclick="interactiveSearch(this)">
+		Test Search / Interactive Search and get search results
+	</button>
+	<br />
+	<button type="button" onclick="triggerSearch(this)">
+		Test Search / Manual trigger for searches in database
+	</button>
+	<!-- Only for testing -->
+
+
+	<div id="searchResults">
+	</div>
+</div>
+</body>
+</html>

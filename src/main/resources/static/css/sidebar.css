@@ -1,0 +1,97 @@
+/* CSS for elements inside the sidebar */
+
+.sidebar
+{
+	margin: 0;
+	padding: 0;
+	width: 15%;
+	min-height: 90vh;
+	box-shadow: 10px 0 10px rgba(0, 0, 0, 0.3);
+	transition: all 0.5s ease;
+}
+
+.sidebar.toggle
+{
+	width: 0;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: none;
+}
+
+@media screen and (max-width:768px)
+{
+    .layout
+    {
+        flex-direction: column;
+    }
+
+	.sidebar
+	{
+		width: 100%;
+		z-index: 1000;
+		height: 0;
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	.sidebar.toggle
+    {
+        width: 100%;
+        height: auto;
+        min-height: 80vh;
+    }
+}
+
+
+.sidebar-heading
+{
+	display: flex;
+	margin: 0;
+    padding-left: 10px;
+    align-items: center;
+	height: var(--header-height);
+    background-color: var(--main-color);
+    cursor: pointer;
+    font-weight: bold;
+    border-bottom: 1px solid black;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar-submenu
+{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: var(--sub-color);
+}
+
+.sidebar-submenu li a
+{
+	display: flex;
+	margin: 0;
+    padding-left: 10px;
+    align-items: center;
+	height: var(--header-height);
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar-submenu li a:hover
+{
+    background-color: var(--hover-color);
+    color:var(--main-color);
+}
+
+.submenu-active
+{
+    background-color: var(--hover-color);
+    color:var(--main-color);
+}
+
+.sidebar-active
+{
+    max-height: 500px;
+}
