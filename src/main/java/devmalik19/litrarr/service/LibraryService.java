@@ -51,8 +51,9 @@ public class LibraryService
 		library.forEach(this::scan);
 	}
 
-	private void scan(LibraryTypes type, String root)
+	private void scan(LibraryTypes type, String libraryPath)
 	{
+		String root = Constants.LIBRARY_PATH + libraryPath;
 		Map<Path, Library> savedDirectories = new HashMap<>();
 		List<Path> filesList = fileSystemService.scanRoot(root);
 		Path rootPath = Paths.get(root).toAbsolutePath().normalize();
