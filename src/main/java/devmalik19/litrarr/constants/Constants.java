@@ -12,10 +12,6 @@ public class Constants
 	public static String CONFIG_PATH;
     public static String DOWNLOAD_PATH;
 	public static String LIBRARY_PATH;
-	public static String COMICS_PATHS;
-	public static String EBOOKS_PATH;
-	public static String MANGA_PATH;
-	public static String AUDIOBOOKS_PATH;
 	public static String SEARCH_CATEGORY = "3000";
 	public static String ENCRYPTION_KEY;
 	public static int QUERY_LIMIT = 1000;
@@ -54,9 +50,5 @@ public class Constants
 	public void setLibraryPath(String path)
 	{
 		LIBRARY_PATH = path;
-		COMICS_PATHS = LIBRARY_PATH + "/comics";
-		MANGA_PATH = LIBRARY_PATH + "/manga";
-		EBOOKS_PATH = LIBRARY_PATH + "/ebooks";
-		AUDIOBOOKS_PATH = LIBRARY_PATH + "/audiobooks";
 	}
 }

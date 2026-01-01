@@ -28,7 +28,7 @@
 
         <div class="sidebar-section">
             <div class="sidebar-heading">Settings</div>
-            <ul class="sidebar-submenu" th:classappend="${section.startsWith('/settings')} ? 'sidebar-active'">
+            <ul class="sidebar-submenu" th:classappend="${section.contains('/settings')} ? 'sidebar-active'">
 				<li>
 					<a  th:classappend="${section == '/settings'}  ? 'submenu-active'" th:href="@{/settings}">General</a>
 				</li>
