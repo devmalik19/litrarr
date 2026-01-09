@@ -6,6 +6,7 @@ import devmalik19.litrarr.constants.Keys;
 import devmalik19.litrarr.constants.Settings;
 import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.DownloadRequest;
+import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.repository.SearchRepository;
@@ -86,5 +87,12 @@ public class SearchService
 			logger.info("Search for {} finish", search.getQuery());
 		});
 		logger.info("Search engine finish!");
+	}
+
+	public void add(MetadataResult metadataResult)
+	{
+		Search search = new Search();
+		search.setQuery(metadataResult.getTitle());
+		searchRepository.save(search);
 	}
 }

@@ -17,10 +17,13 @@
 							</span>
 						</th>
 
-						<!-- Logical container for the Header -->
 						<th:block th:if="${isMetadataResult ?: false}">
-							<th>Download Url</th>
+							<th>Download</th>
 						</th:block>
+						<th:block th:if="${isMetadataResult ?: true}">
+							<th>Search</th>
+						</th:block>
+
 					</tr>
 				</thead>
 				<tbody>
@@ -34,11 +37,21 @@
 								<button type="button"
 										th:data-url="${result.guid}"
 										th:data-protocol="${result.protocol}"
-										onclick="download(this, '/search/result/download')">
+										onclick="download(this)">
 									Download
 								</button>
 							</td>
 						</th:block>
+						<th:block th:if="${isMetadataResult ?: true}">
+							<td>
+								<button type="button"
+										th:data-payload='${result}'
+										onclick="addSearch(this)">
+									Search
+								</button>
+							</td>
+						</th:block>
+
                     </tr>
 				</tbody>
 			</table>

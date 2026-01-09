@@ -1,6 +1,7 @@
 package devmalik19.litrarr.controller;
 
 import devmalik19.litrarr.data.dto.DownloadRequest;
+import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.service.SearchService;
@@ -46,6 +47,14 @@ public class SearchController
 		networkService.download(downloadRequest);
         return ResponseEntity.ok("");
     }
+
+	@PostMapping("/search/add")
+	@ResponseBody
+	public ResponseEntity<String> add(@RequestBody @Valid MetadataResult metadataResult) throws Exception
+	{
+		searchService.add(metadataResult);
+		return ResponseEntity.ok("");
+	}
 
 	@GetMapping("/search/trigger")
 	@ResponseBody

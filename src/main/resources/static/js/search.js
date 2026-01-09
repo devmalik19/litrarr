@@ -110,7 +110,7 @@ async function fetchResults()
     document.getElementById("searchResults").innerHTML = response;
 }
 
-async function download(button, uri)
+async function download(button)
 {
     const downloadUrl = button.getAttribute('data-url');
     const protocol = button.getAttribute('data-protocol');
@@ -118,5 +118,12 @@ async function download(button, uri)
             url: downloadUrl,
             protocol: protocol
     };
-    const response = await doPostRequestWithBody(uri, body);
+    const response = await doPostRequestWithBody("search/download", body);
+}
+
+async function addSearch(button)
+{
+    const payload = button.getAttribute('data-payload');
+    const data = JSON.parse(payload);
+    const response = await doPostRequestWithBody("search/add", data);
 }
