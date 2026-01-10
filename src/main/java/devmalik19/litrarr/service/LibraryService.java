@@ -47,11 +47,11 @@ public class LibraryService
 	@SneakyThrows
 	public void scan()
 	{
-		HashMap<LibraryTypes, String> library = getLibrariesPath();
+		HashMap<Category, String> library = getLibrariesPath();
 		library.forEach(this::scan);
 	}
 
-	private void scan(LibraryTypes type, String libraryPath)
+	private void scan(Category category, String libraryPath)
 	{
 		String root = Constants.LIBRARY_PATH + libraryPath;
 		Map<Path, Library> savedDirectories = new HashMap<>();
@@ -86,27 +86,27 @@ public class LibraryService
 				Library library = libraryRepository.findByPath(path.toString()).orElse(new Library());
 				library.setName(path.getFileName().toString());
 				library.setPath(path.toString());
-				library.setType(type);
+				library.setCategory(category);
 				if (parentPath != null && savedDirectories.containsKey(parentPath))
 				{
 					library.setLibrary(savedDirectories.get(parentPath));
 				}
 
-				switch (type)
+				switch (category)
 				{
 					case BOOKS :
 					case AUDIOBOOKS:
 						if (depth == 1)
-							library.setCategory(BookCategory.AUTHOR);
+							library.setType(FolderType.AUTHOR);
 						else if (depth == 2)
-							library.setCategory(BookCategory.BOOK);
+							library.setType(FolderType.BOOK);
 					break;
 					case COMICS:
 					case MANGA:
 						if (depth == 1)
-							library.setCategory(BookCategory.TITLE);
+							library.setType(FolderType.TITLE);
 						else if (depth == 2)
-							library.setCategory(BookCategory.ISSUE_NUMBER);
+							library.setType(FolderType.ISSUE_NUMBER);
 
 					break;
 				}
@@ -149,17 +149,7 @@ public class LibraryService
 			.toList();
 	}
 
-	public List<Library> getAll()
-	{
-		return libraryRepository.findAll();
-	}
-
-	public  List<Library> getLibrary(LibraryTypes type)
-	{
-		return libraryRepository.findByType(type);
-	}
-
-	public  List<Library> getLibraryByCategory(LibraryTypes type, BookCategory category)
+	public  List<Library> getLibrary(FolderType type, Category category)
 	{
 		return libraryRepository.findByTypeAndCategory(type, category);
 	}
@@ -169,14 +159,14 @@ public class LibraryService
 		return libraryRepository.findById(id).orElse(new Library());
 	}
 
-	public static HashMap<LibraryTypes, String> getLibrariesPath() throws Exception
+	public static HashMap<Category, String> getLibrariesPath() throws Exception
 	{
-		HashMap<LibraryTypes, String> library = new HashMap<>();
+		HashMap<Category, String> library = new HashMap<>();
 		String paths = Settings.store.get(Keys.LIBRARY_PATHS);
 		if(StringUtils.hasText(paths))
 		{
 			ObjectMapper objectMapper = new ObjectMapper();
-			library = objectMapper.readValue(paths, new TypeReference<HashMap<LibraryTypes, String>>(){});
+			library = objectMapper.readValue(paths, new TypeReference<HashMap<Category, String>>(){});
 		}
 		return library;
 	}

@@ -1,7 +1,7 @@
 package devmalik19.litrarr.data.dao;
 
-import devmalik19.litrarr.constants.BookCategory;
-import devmalik19.litrarr.constants.LibraryTypes;
+import devmalik19.litrarr.constants.FolderType;
+import devmalik19.litrarr.constants.Category;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,8 +25,8 @@ public class Library
 	private Integer id;
 	private String guid;
 	private String name;
-	private LibraryTypes type;
-	private BookCategory category;
+	private FolderType type;
+	private Category category;
 	private String path;
 	private String image;
 	private String creator;

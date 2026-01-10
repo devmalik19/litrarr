@@ -1,7 +1,7 @@
 package devmalik19.litrarr.controller;
 
 import devmalik19.litrarr.constants.Keys;
-import devmalik19.litrarr.constants.LibraryTypes;
+import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.service.IndexService;
 import devmalik19.litrarr.service.LibraryService;
 import devmalik19.litrarr.service.SettingsService;
@@ -34,12 +34,12 @@ public class SettingsController
 		services.addAll(PluginsService.services);
 		model.addAttribute("services", services);
 
-		HashMap<LibraryTypes, String> library = LibraryService.getLibrariesPath();
+		HashMap<Category, String> library = LibraryService.getLibrariesPath();
 
-		model.addAttribute("comics", library.get(LibraryTypes.COMICS));
-		model.addAttribute("manga", library.get(LibraryTypes.MANGA));
-		model.addAttribute("books", library.get(LibraryTypes.BOOKS));
-		model.addAttribute("audiobooks", library.get(LibraryTypes.AUDIOBOOKS));
+		model.addAttribute("comics", library.get(Category.COMICS));
+		model.addAttribute("manga", library.get(Category.MANGA));
+		model.addAttribute("books", library.get(Category.BOOKS));
+		model.addAttribute("audiobooks", library.get(Category.AUDIOBOOKS));
 
 
 		return "settings/general";
@@ -74,11 +74,11 @@ public class SettingsController
 		@RequestParam("books") String books,
 		@RequestParam("audiobooks") String audiobooks)
 	{
-		HashMap<LibraryTypes, String> library = new HashMap<>();
-		library.put(LibraryTypes.COMICS, comics);
-		library.put(LibraryTypes.MANGA, manga);
-		library.put(LibraryTypes.BOOKS, books);
-		library.put(LibraryTypes.AUDIOBOOKS, audiobooks);
+		HashMap<Category, String> library = new HashMap<>();
+		library.put(Category.COMICS, comics);
+		library.put(Category.MANGA, manga);
+		library.put(Category.BOOKS, books);
+		library.put(Category.AUDIOBOOKS, audiobooks);
 		settingsService.save(Keys.LIBRARY_PATHS, library);
 		return "redirect:/settings";
 	}

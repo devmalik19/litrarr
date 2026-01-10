@@ -2,7 +2,7 @@ package devmalik19.litrarr.constants;
 
 import org.springframework.util.StringUtils;
 
-public enum LibraryTypes
+public enum Category
 {
 	COMICS,
 	BOOKS,

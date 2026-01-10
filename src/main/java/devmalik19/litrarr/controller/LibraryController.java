@@ -1,7 +1,7 @@
 package devmalik19.litrarr.controller;
 
-import devmalik19.litrarr.constants.BookCategory;
-import devmalik19.litrarr.constants.LibraryTypes;
+import devmalik19.litrarr.constants.FolderType;
+import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.service.LibraryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,7 @@ public class LibraryController
 	public String comics(Model model)
 	{
 		model.addAttribute("title", "Comics");
-		model.addAttribute("library", libraryService.getLibraryByCategory(LibraryTypes.COMICS, BookCategory.TITLE));
+		model.addAttribute("library", libraryService.getLibrary(FolderType.TITLE, Category.COMICS));
 		return "library";
 	}
 
@@ -28,7 +28,7 @@ public class LibraryController
 	public String manga(Model model)
 	{
 		model.addAttribute("title", "Manga");
-		model.addAttribute("library", libraryService.getLibraryByCategory(LibraryTypes.MANGA, BookCategory.TITLE));
+		model.addAttribute("library", libraryService.getLibrary(FolderType.TITLE, Category.MANGA ));
 		return "library";
 	}
 
@@ -36,7 +36,7 @@ public class LibraryController
 	public String books(Model model)
 	{
 		model.addAttribute("title", "Books");
-		model.addAttribute("library", libraryService.getLibraryByCategory(LibraryTypes.BOOKS, BookCategory.AUTHOR));
+		model.addAttribute("library", libraryService.getLibrary(FolderType.AUTHOR, Category.BOOKS));
 		return "library";
 	}
 
@@ -44,7 +44,7 @@ public class LibraryController
 	public String audiobooks(Model model)
 	{
 		model.addAttribute("title", "Audiobooks");
-		model.addAttribute("library", libraryService.getLibraryByCategory(LibraryTypes.AUDIOBOOKS, BookCategory.AUTHOR));
+		model.addAttribute("library", libraryService.getLibrary(FolderType.AUTHOR, Category.AUDIOBOOKS));
 		return "library";
 	}
 

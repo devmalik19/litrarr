@@ -47,7 +47,7 @@ public class MetaDataService
 		}
 		else
 		{
-			switch (library.getType())
+			switch (library.getCategory())
 			{
 				case BOOKS :
 				case AUDIOBOOKS:

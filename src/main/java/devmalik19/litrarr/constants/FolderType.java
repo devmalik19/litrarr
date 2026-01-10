@@ -1,6 +1,6 @@
 package devmalik19.litrarr.constants;
 
-public enum BookCategory
+public enum FolderType
 {
 	AUTHOR,
 	BOOK,
