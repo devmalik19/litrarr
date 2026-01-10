@@ -50,5 +50,5 @@ CREATE TABLE library_filter (
 	"type" VARCHAR(255) NULL
 );
 
-INSERT INTO settings VALUES('priority','{"TORRENT":1,"USENET":2,"slskd":3}')
-INSERT INTO settings VALUES('library_paths','{0:"/Comics",1:"/Books",2:"/Audiobooks",3:"/Manga"}')
+INSERT INTO settings VALUES('priority','{"TORRENT":1,"USENET":2,"slskd":3}');
+INSERT INTO settings VALUES('library_paths','{0:"/Comics",1:"/Books",2:"/Audiobooks",3:"/Manga"}');
