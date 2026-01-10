@@ -67,20 +67,7 @@ public class MetaDataService
 
 	public void getMetaForItem(Item item)
 	{
-		switch (item.getType())
-		{
-			case BOOKS :
-			case AUDIOBOOKS:
-				googleBookService.getMetaForItem(item);
-			break;
 
-			case COMICS:
-				comicVineService.getMetaForItem(item);
-			break;
-
-			case MANGA:
-				myAnimeListService.getMetaForItem(item);
-		}
 	}
 
 	public Page<MetadataResult> search(String search, Pageable pageable)
