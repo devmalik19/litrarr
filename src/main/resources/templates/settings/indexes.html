@@ -28,7 +28,7 @@
                 </div>
             </div>
 
-			<div th:replace="~{fragments/dialog :: dialog('Add Prowlarr', prowlarr, '/settings/save/prowlarr?redirect=clients', '/settings/indexes/check/prowlarr')}">
+			<div th:replace="~{fragments/dialog :: dialog('Add Prowlarr', prowlarr, '/settings/save/prowlarr?redirect=indexes', '/settings/indexes/check/prowlarr')}">
 				<div class="form-body" th:fragment="prowlarr"  th:object="${settings}">
 
 					<div class="form-row">
