@@ -29,9 +29,7 @@ public class SettingsController
 	@GetMapping("settings")
 	public String general(Model model) throws Exception
 	{
-		List<String> services = new ArrayList<>();
-		services.addAll(NetworkService.services);
-		services.addAll(PluginsService.services);
+		List<String> services = settingsService.getServices();
 		model.addAttribute("services", services);
 
 		HashMap<Category, String> library = LibraryService.getLibrariesPath();
