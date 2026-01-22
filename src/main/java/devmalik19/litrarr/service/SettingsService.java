@@ -113,6 +113,19 @@ SettingsService
 		HashMap<String, Integer> priority = objectMapper.readValue(value, new TypeReference<HashMap<String, Integer>>() {});
 
 		return priority.entrySet().stream()
-			.sorted(Entry.comparingByValue()).map(Entry::getKey).toList();
+			.filter(e->e.getValue()!=0)
+			.sorted(Entry.comparingByValue())
+			.map(Entry::getKey).toList();
 	}
+
+	public List<String> getDisabledServices() throws Exception
+	{
+		String value = Settings.store.get(Keys.PRIORITY);
+		HashMap<String, Integer> priority = objectMapper.readValue(value, new TypeReference<HashMap<String, Integer>>() {});
+
+		return priority.entrySet().stream()
+			.filter(e->e.getValue()==0)
+			.map(Entry::getKey).toList();
+	}
+
 }

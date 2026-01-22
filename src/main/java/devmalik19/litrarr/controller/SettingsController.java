@@ -27,7 +27,11 @@ public class SettingsController
 	public String general(Model model) throws Exception
 	{
 		List<String> services = settingsService.getServices();
+		List<String> servicesDisabled = settingsService.getDisabledServices();
+
 		model.addAttribute("services", services);
+		model.addAttribute("servicesDisabled", servicesDisabled);
+
 
 		HashMap<Category, String> library = LibraryService.getLibrariesPath();
 

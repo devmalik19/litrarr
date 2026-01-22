@@ -35,6 +35,11 @@
 						<span th:text="${service}">Service Name</span>
 						<input type="hidden" name="order" th:value="${service}" />
 					</li>
+					<li class="ui-state-default" th:each="service : ${servicesDisabled}">
+						<input type="checkbox" name="enabled" th:value="${service}" />
+						<span th:text="${service}">Service Name</span>
+						<input type="hidden" name="order" th:value="${service}" />
+					</li>
 				</ul>
 				<button type="submit">Save</button>
 			</form>
