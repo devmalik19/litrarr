@@ -176,6 +176,23 @@ form
     padding: 10px 0px 0px 20px;
 }
 
+
+.button
+{
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: var(--text-color);
+    color: var(--muted-color);
+    border-radius: 4px;
+    text-align: center;
+}
+
+.button:hover
+{
+	color: var(--text-color);
+	background-color: var(--sub-color);
+}
+
 @media screen and (max-width:768px)
 {
       table, thead, tbody, th, td, tr

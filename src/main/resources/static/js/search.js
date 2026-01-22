@@ -4,26 +4,6 @@ let currentSortField = '';
 let currentSortDirection = '';
 let currentSearchTerm = '';
 
-async function triggerSearch(searchButton)
-{
-    const originalText = searchButton.textContent;
-    searchButton.disabled = true;
-    searchButton.textContent = '...';
-
-    const response = await doGetRequest("search/trigger");
-
-    if (response.ok)
-    {
-        searchButton.textContent = '✅';
-    }
-    else
-    {
-        searchButton.textContent = '❌';
-    }
-
-    searchButton.disabled = false;
-}
-
 async function metadataSearch(searchButton)
 {
 	const originalText = searchButton.textContent;
@@ -51,16 +31,35 @@ async function metadataSearch(searchButton)
 	searchButton.disabled = false;
 }
 
-async function interactiveSearch(searchButton)
+async function triggerSearch(searchButton, id)
+{
+    const originalText = searchButton.textContent;
+    searchButton.disabled = true;
+    searchButton.textContent = '...';
+
+    const response = await doGetRequest("search/trigger/"+id);
+
+    if (response.ok)
+    {
+        searchButton.textContent = '✅';
+    }
+    else
+    {
+        searchButton.textContent = '❌';
+    }
+
+    searchButton.disabled = false;
+}
+
+async function interactiveSearch(searchButton, id)
 {
 	const originalText = searchButton.textContent;
  	searchButton.disabled = true;
     searchButton.textContent = '...';
-	const searchInput = document.getElementById("search");
 
 	const sortParam = currentSortField ? `${currentSortField},${currentSortDirection}` : '';
 	const params = new URLSearchParams({
-		search: searchInput.value,
+		id: id,
 		page: currentPage,
 		size: pageSize,
 		sort: sortParam
@@ -137,6 +136,6 @@ async function deleteSearch(id)
 {
 	if (confirm("Are you sure you want to delete this entry?"))
 	{
-		window.location.href = `search/delete?id=${id}`;
+		window.location.href = `delete?id=${id}`;
 	}
 }

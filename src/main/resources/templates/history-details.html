@@ -3,6 +3,7 @@
 	<body th:replace="~{layouts/layout :: base('Search Details')}">
 		<div th:fragment="content">
 			<h2>Search Details</h2>
+			<a th:href="@{/search}">Back to History</a>
 
 			<div>
 				<p><strong>Title:</strong> <span th:text="${search.title}"></span></p>
@@ -15,11 +16,16 @@
 			</div>
 
 			<hr>
-			<button type="button" th:onclick="|deleteSearch('${search.id}')|" style="color: red;">
+			<button type="button" th:onclick="|triggerSearch(this, '${search.id}')|">
+				Search
+			</button>
+			<button type="button" th:onclick="|interactiveSearch(this, '${search.id}')|">
+				Interactive Search
+			</button>
+			<button type="button" th:onclick="|deleteSearch('${search.id}')|">
 				Delete
 			</button>
-			<hr>
-			<a th:href="@{/search}">Back to History</a>
+
 		</div>
 	</body>
 </html>
