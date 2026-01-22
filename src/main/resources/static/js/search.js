@@ -37,7 +37,7 @@ async function triggerSearch(searchButton, id)
     searchButton.disabled = true;
     searchButton.textContent = '...';
 
-    const response = await doGetRequest("search/trigger/"+id);
+    const response = await doGetRequest("trigger/"+id);
 
     if (response.ok)
     {
@@ -65,7 +65,7 @@ async function interactiveSearch(searchButton, id)
 		sort: sortParam
 	});
 
-	url = "search/interactive?" + params.toString();
+	url = "interactive?" + params.toString();
     const response = await doGetRequest(url);
     document.getElementById("searchResults").innerHTML = response;
     searchButton.textContent = originalText;
