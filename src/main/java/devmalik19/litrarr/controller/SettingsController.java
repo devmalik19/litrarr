@@ -6,9 +6,6 @@ import devmalik19.litrarr.service.IndexService;
 import devmalik19.litrarr.service.LibraryService;
 import devmalik19.litrarr.service.SettingsService;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
-import devmalik19.litrarr.service.plugins.PluginsService;
-import devmalik19.litrarr.service.thirdparty.NetworkService;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 

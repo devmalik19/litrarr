@@ -13,8 +13,7 @@
 						<th>Year</th>
 						<th>Status</th>
 						<th>Category</th>
-						<th>Delete</th>
-						<th>Download Path</th>
+						<th>Action</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -26,9 +25,9 @@
 						<td th:text="${result.status}"></td>
 						<td th:text="${result.category}"></td>
 						<td>
-							<button type="button" th:onclick="|deleteSearch('${result.id}')|">
-								Delete
-							</button>
+							<a th:href="@{/search/{id}(id=${result.id})}">
+								View Details
+							</a>
 						</td>
 						<td th:text="${result.library?.path}"></td>
 					</tr>

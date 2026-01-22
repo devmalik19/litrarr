@@ -49,6 +49,7 @@ public class StartupTasks
 		setSkipPatterns();
 		searchService.setPriorityOrder();
 		networkService.sync();
+		libraryService.dbCleanUp();
 		libraryService.scan();
 	}
 
