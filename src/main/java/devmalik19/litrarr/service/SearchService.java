@@ -137,4 +137,12 @@ public class SearchService
 		Optional<Search> opt = searchRepository.findById(id);
 		return opt.get();
 	}
+
+	public void checkDownloads()
+	{
+		List<Search> searchList = searchRepository.findByStatus(SearchStatus.DOWNLOADING);
+		searchList.forEach(search -> {
+
+		});
+	}
 }

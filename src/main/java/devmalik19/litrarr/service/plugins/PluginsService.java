@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.constants.Settings;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 import devmalik19.litrarr.helper.FilesHelper;
-import devmalik19.litrarr.helper.ServiceProvider;
 import devmalik19.litrarr.service.plugins.SlskdService.SearchResult;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class PluginsService implements ServiceProvider
+public class PluginsService
 {
 	Logger logger = LoggerFactory.getLogger(PluginsService.class);
 
@@ -54,7 +53,6 @@ public class PluginsService implements ServiceProvider
 		return connectionSettingsList;
 	}
 
-	@Override
 	public boolean search(String query) throws Exception
 	{
 		logger.info("Searching plugins services");

@@ -3,9 +3,12 @@ package devmalik19.litrarr.data.dao;
 
 import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.constants.SearchStatus;
+import devmalik19.litrarr.data.dto.DownloadState;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -25,4 +28,8 @@ public class Search
 	@ManyToOne
 	@JoinColumn(name = "library")
 	private Library library;
+
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(columnDefinition = "TEXT")
+	private DownloadState data;
 }

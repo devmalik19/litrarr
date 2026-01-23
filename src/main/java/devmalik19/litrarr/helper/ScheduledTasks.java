@@ -17,11 +17,19 @@ public class ScheduledTasks
 	private SearchService searchService;
 
 	@Scheduled(cron = "0 0 6 * * *")
-	public void search() throws Exception
+	public void ScheduledSearch() throws Exception
 	{
 		logger.info("Starting scheduled search!");
 		searchService.reset();
 		searchService.triggerSearch();
 		logger.info("Scheduled search ended!");
+	}
+
+	@Scheduled(cron = "0 */10 * * * *")
+	public void checkDownloads()
+	{
+		logger.info("Starting download check!");
+		searchService.checkDownloads();
+		logger.info("download check ended!");
 	}
 }
