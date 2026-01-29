@@ -2,6 +2,7 @@ package devmalik19.litrarr.service.thirdparty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.constants.Settings;
+import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 import devmalik19.litrarr.service.HttpRequestService;
 import java.util.HashMap;
@@ -55,5 +56,8 @@ public class QbittorrentService
             String response = httpRequestService.doPostRequest(String.format("%s/api/v2/torrents/add", connectionSettings.getUrl()), body, headers);
 			logger.info("Download enqueued for {} {}", body, response);
 		}
+    }
+
+    public void checkDownloads(Search search) {
     }
 }

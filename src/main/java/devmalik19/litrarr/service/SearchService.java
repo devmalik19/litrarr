@@ -93,19 +93,15 @@ public class SearchService
 		search.setStatus(SearchStatus.SEARCHING);
 		searchRepository.save(search);
 
-		boolean isSuccess = false;
+		boolean isSuccess;
 		for (Entry<String, Integer> entry : sortedServices)
 		{
 			try
 			{
 				if(NetworkService.services.contains(entry.getKey()))
-					isSuccess = networkService.search(search.getTitle())
-						|| networkService.search(search.getAuthor()  + " " + search.getTitle())
-						|| networkService.search(search.getTitle()  + " " + search.getYear());
+					isSuccess = networkService.search(search);
 				else
-					isSuccess = pluginsService.search(search.getTitle())
-						|| pluginsService.search(search.getAuthor()  + " " + search.getTitle())
-						|| pluginsService.search(search.getTitle()  + " " + search.getYear());
+					isSuccess = pluginsService.search(search);
 
 				if(isSuccess)
 					break;
@@ -115,9 +111,6 @@ public class SearchService
 				logger.debug(e.getLocalizedMessage());
 			}
 		}
-
-		search.setStatus(isSuccess ? SearchStatus.DOWNLOADING: SearchStatus.NOTFOUND);
-		searchRepository.save(search);
 		logger.info("Search for {} finish", search.getTitle());
 	}
 
@@ -138,11 +131,20 @@ public class SearchService
 		return opt.get();
 	}
 
+
 	public void checkDownloads()
 	{
 		List<Search> searchList = searchRepository.findByStatus(SearchStatus.DOWNLOADING);
 		searchList.forEach(search -> {
-
+			try
+			{
+				networkService.checkDownloads(search);
+				pluginsService.checkDownloads(search);
+			}
+			catch (Exception e)
+			{
+				logger.debug(e.getLocalizedMessage());
+			}
 		});
 	}
 }

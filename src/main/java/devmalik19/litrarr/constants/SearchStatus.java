@@ -5,5 +5,7 @@ public enum SearchStatus
 	NEW,
 	SEARCHING,
 	DOWNLOADING,
-	NOTFOUND
+	NOTFOUND,
+	COMPLETED,
+	FAILED
 }

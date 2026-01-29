@@ -2,6 +2,7 @@ package devmalik19.litrarr.service.thirdparty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.constants.Settings;
+import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
@@ -36,5 +37,8 @@ public class SabnzbdService
 				connectionSettings.getCategory(), url));
 			logger.info("Download enqueued for {} {}", url, response);
         }
+    }
+
+    public void checkDownloads(Search search) {
     }
 }

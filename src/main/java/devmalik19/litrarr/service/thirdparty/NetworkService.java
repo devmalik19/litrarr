@@ -4,13 +4,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.constants.Keys;
 import devmalik19.litrarr.constants.Protocol;
+import devmalik19.litrarr.constants.SearchStatus;
 import devmalik19.litrarr.constants.Settings;
+import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 import devmalik19.litrarr.data.dto.DownloadRequest;
+import devmalik19.litrarr.data.dto.DownloadState;
 import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.helper.FilesHelper;
-import devmalik19.litrarr.helper.ServiceProvider;
 
+import devmalik19.litrarr.repository.SearchRepository;
 import java.util.*;
 
 import org.slf4j.Logger;
@@ -19,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class NetworkService implements ServiceProvider
+public class NetworkService
 {
 	Logger logger = LoggerFactory.getLogger(NetworkService.class);
 
@@ -40,6 +43,10 @@ public class NetworkService implements ServiceProvider
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Autowired
+	private SearchRepository searchRepository;
+
 
 
 	public String check(String key, ConnectionSettings connectionSettings)
@@ -70,13 +77,39 @@ public class NetworkService implements ServiceProvider
 			sabnzbdService.addNzb(downloadRequest.getUrl());
 	}
 
-	@Override
+	public boolean search(Search search) throws Exception
+	{
+		boolean isSuccess = false;
+		DownloadState downloadState;
 
-	public boolean search(String query) throws Exception
+		downloadState = search(search.getTitle());
+
+		if(downloadState.isEmpty())
+			downloadState = search(search.getAuthor()  + " " + search.getTitle());
+		else
+			isSuccess = true;
+
+		if(downloadState.isEmpty())
+			downloadState = search(search.getAuthor()  + " " + search.getTitle()  + " " +search.getYear());
+		else
+			isSuccess = true;
+
+		if(!downloadState.isEmpty())
+			isSuccess = true;
+
+		if(isSuccess)
+			search.setData(downloadState);
+		search.setStatus(isSuccess ? SearchStatus.DOWNLOADING: SearchStatus.NOTFOUND);
+		searchRepository.save(search);
+
+		return isSuccess;
+	}
+
+	public DownloadState search(String query) throws Exception
 	{
 		logger.info("Searching network services");
 
-		boolean isSuccess = false;
+		DownloadState downloadState = new DownloadState();
 		SearchResult[] results = prowlarrService.search(query);
 
 		logger.info("{} results found from prowlarr for {}", results.length, query);
@@ -102,11 +135,10 @@ public class NetworkService implements ServiceProvider
 					qbittorrentService.addTorrent(result.getGuid());
 				else
 					sabnzbdService.addNzb(result.getGuid());
-				isSuccess = true;
 				break;
 			}
 		}
-		return isSuccess;
+		return downloadState;
 	}
 
 	public ConnectionSettings getConnectionsSettingsForIndexes()
@@ -146,5 +178,13 @@ public class NetworkService implements ServiceProvider
 			logger.error(e.getLocalizedMessage());
 		}
 		return connectionSettingsList;
+	}
+
+	public void checkDownloads(Search search)
+	{
+		if(Objects.equals(search.getData().getService(), NetworkService.QBITTORRENT))
+			qbittorrentService.checkDownloads(search);
+		if(Objects.equals(search.getData().getService(), NetworkService.SABNZBD))
+			sabnzbdService.checkDownloads(search);
 	}
 }

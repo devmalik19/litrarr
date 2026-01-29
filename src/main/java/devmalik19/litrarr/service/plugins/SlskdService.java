@@ -3,6 +3,7 @@ package devmalik19.litrarr.service.plugins;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.constants.Settings;
+import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 import devmalik19.litrarr.service.HttpRequestService;
 import java.util.ArrayList;
@@ -33,7 +34,10 @@ public class SlskdService
         return httpRequestService.doGetRequest(String.format("%s/api/v0/session/enabled",connectionSettings.getUrl()));
     }
 
-	public record SearchResult(String username, String fullPath, long fileSize){}
+    public void checkDownloads(Search search) {
+    }
+
+    public record SearchResult(String username, String fullPath, long fileSize){}
     public List<SearchResult> search(String search) throws Exception
     {
 		List<SearchResult> searchResultList = new ArrayList<>();
