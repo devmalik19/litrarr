@@ -15,7 +15,7 @@
 	<artifactId>litrarr</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>litrarr</name>
-	<description>A project to search for single songs and maintain custom albums.</description>
+	<description>A project to search for and manage books, comics, and manga libraries.</description>
 
 	<properties>
 		<java.version>25</java.version>
@@ -97,6 +97,12 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
 			<version>${apache.version}</version>
+		</dependency>
+
+		<!-- Caching with TTL support -->
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
 		</dependency>
 
 	</dependencies>

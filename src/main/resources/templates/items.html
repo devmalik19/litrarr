@@ -5,7 +5,7 @@
 			<h2 th:text="${library.name}">Library Name</h2>
 
 			<div class="poster-grid">
-				<a class="poster" th:each="library: ${libraries}" th:href="@{/library/{id}(id=${library.id})}">
+				<a class="poster" th:each="library: ${libraries}" th:href="@{/library/view/{id}(id=${library.id})}">
 					<div class="poster-image" th:style="|background-image: url('@{${@imageHelper.getPath(library.image)}}');|">
 					</div>
 					<div class="poster-details">

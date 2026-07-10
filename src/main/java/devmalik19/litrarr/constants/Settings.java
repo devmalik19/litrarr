@@ -1,8 +1,8 @@
 package devmalik19.litrarr.constants;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public interface Settings
 {
-	HashMap<String, String> store = new HashMap<>();
+	ConcurrentHashMap<String, String> store = new ConcurrentHashMap<>();
 }

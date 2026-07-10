@@ -7,7 +7,9 @@ import devmalik19.litrarr.data.dao.Library;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface LibraryRepository extends JpaRepository<Library, Integer>
 {
 	Optional<Library> findByPath(String path);

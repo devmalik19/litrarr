@@ -1,6 +1,6 @@
 package devmalik19.litrarr;
 
-import devmalik19.litrarr.helper.StartupTasks;
+import devmalik19.litrarr.lifecycle.StartupTasks;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;

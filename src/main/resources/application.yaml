@@ -25,7 +25,7 @@ app:
         download: "${DOWNLOAD_PATH:/downloads}"
         library: "${LIBRARY_PATH:/library}"
     encryption:
-        key: ${ENCRYPTION_KEY}
+        key: ${ENCRYPTION_KEY:}
     user-agent: ${USER_AGENT:"Litrarr/1.0"}
 
 ---

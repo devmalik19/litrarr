@@ -1,13 +1,12 @@
 package devmalik19.litrarr.service.thirdparty;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.constants.Constants;
-import devmalik19.litrarr.constants.Keys;
 import devmalik19.litrarr.constants.Settings;
 import devmalik19.litrarr.data.dao.Index;
 import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.data.dto.Tag;
+import devmalik19.litrarr.helper.PriorityHelper;
 import devmalik19.litrarr.repository.IndexRepository;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 
@@ -18,7 +17,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -27,16 +25,20 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Service
 public class ProwlarrService
 {
-	Logger logger = LoggerFactory.getLogger(ProwlarrService.class);
+	private static final Logger logger = LoggerFactory.getLogger(ProwlarrService.class);
 
-    @Autowired
-    private HttpRequestService httpRequestService;
+	private final HttpRequestService httpRequestService;
+	private final IndexRepository indexRepository;
+	private final ObjectMapper objectMapper;
 
-    @Autowired
-	private IndexRepository indexRepository;
-
-	@Autowired
-	private ObjectMapper objectMapper;
+	public ProwlarrService(HttpRequestService httpRequestService,
+						   IndexRepository indexRepository,
+						   ObjectMapper objectMapper)
+	{
+		this.httpRequestService = httpRequestService;
+		this.indexRepository = indexRepository;
+		this.objectMapper = objectMapper;
+	}
 
     public String checkConnection(ConnectionSettings connectionSettings)
     {
@@ -89,10 +91,9 @@ public class ProwlarrService
 	@Cacheable("ProwlarrSearchResult")
     public SearchResult[] search(String searchTerm) throws Exception
 	{
-		String value = Settings.store.get(Keys.PRIORITY);
-		HashMap<String, Integer> priority = objectMapper.readValue(value, new TypeReference<HashMap<String, Integer>>() {});
+		HashMap<String, Integer> priority = PriorityHelper.getPriority();
 
-		value = Settings.store.get(NetworkService.PROWLARR);
+		String value = Settings.store.get(NetworkService.PROWLARR);
 		if(StringUtils.hasText(value))
 		{
 			ConnectionSettings prowlarrSettings = objectMapper.readValue(value, ConnectionSettings.class);

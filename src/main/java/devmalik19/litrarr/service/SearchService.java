@@ -1,15 +1,14 @@
 package devmalik19.litrarr.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import devmalik19.litrarr.constants.Keys;
 import devmalik19.litrarr.constants.SearchStatus;
-import devmalik19.litrarr.constants.Settings;
+import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.DownloadRequest;
 import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.helper.PaginationHelper;
+import devmalik19.litrarr.helper.PriorityHelper;
+import devmalik19.litrarr.repository.LibraryRepository;
 import devmalik19.litrarr.repository.SearchRepository;
 import devmalik19.litrarr.service.plugins.PluginsService;
 import devmalik19.litrarr.service.thirdparty.NetworkService;
@@ -18,35 +17,41 @@ import java.util.*;
 import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SearchService
 {
-	static Logger logger = LoggerFactory.getLogger(SearchService.class);
+	private static final Logger logger = LoggerFactory.getLogger(SearchService.class);
 
-    @Autowired
-    private NetworkService networkService;
-
-	@Autowired
-	private PluginsService pluginsService;
-
-	@Autowired
-	private SearchRepository searchRepository;
-
-	@Autowired
-	private ObjectMapper objectMapper;
+	private final NetworkService networkService;
+	private final PluginsService pluginsService;
+	private final DownloadService downloadService;
+	private final SearchRepository searchRepository;
+	private final LibraryRepository libraryRepository;
 
 	private static List<Entry<String, Integer>> sortedServices;
 
-	public void setPriorityOrder() throws Exception
+	public SearchService(NetworkService networkService,
+						 PluginsService pluginsService,
+						 DownloadService downloadService,
+						 SearchRepository searchRepository,
+						 LibraryRepository libraryRepository)
 	{
-		String value = Settings.store.get(Keys.PRIORITY);
-		HashMap<String, Integer> priority = objectMapper.readValue(value, new TypeReference<HashMap<String, Integer>>() {});
+		this.networkService = networkService;
+		this.pluginsService = pluginsService;
+		this.downloadService = downloadService;
+		this.searchRepository = searchRepository;
+		this.libraryRepository = libraryRepository;
+	}
+
+	public void setPriorityOrder()
+	{
+		HashMap<String, Integer> priority = PriorityHelper.getPriority();
 
 		sortedServices = priority.entrySet().stream()
 			.filter(entry -> entry.getValue() != 0)
@@ -68,18 +73,31 @@ public class SearchService
 	{
 		Search search = new Search();
 		search.setTitle(metadataResult.getTitle());
-		search = searchRepository.save(search);
-		searchEntry(search);
+		search.setAuthor(metadataResult.getAuthor());
+		search.setYear(metadataResult.getYear());
+		search.setStatus(SearchStatus.NEW);
+
+		if (metadataResult.getLibrary() != null)
+		{
+			Optional<Library> library = libraryRepository.findById(metadataResult.getLibrary());
+			library.ifPresent(lib -> {
+				search.setLibrary(lib);
+				search.setCategory(lib.getCategory());
+			});
+		}
+
+		Search saved = searchRepository.save(search);
+		searchEntry(saved);
 	}
 
 	public Page<SearchResult> interactiveSearch(Integer id, Pageable pageable) throws Exception
 	{
 		Search search = getSearchById(id);
-		List<SearchResult> searchResults = Arrays.asList(networkService.getSearchResults(search.getAuthor()  + " " + search.getTitle()));
+		List<SearchResult> searchResults = Arrays.asList(networkService.getSearchResults(search.getAuthor() + " " + search.getTitle()));
 		return PaginationHelper.prepareResults(searchResults, pageable);
 	}
 
-	public void triggerSearch() throws Exception
+	public void triggerSearch()
 	{
 		logger.info("Starting search engine!");
 		List<Search> searchList = searchRepository.findByStatus(SearchStatus.NEW);
@@ -98,12 +116,12 @@ public class SearchService
 		{
 			try
 			{
-				if(NetworkService.services.contains(entry.getKey()))
+				if (NetworkService.services.contains(entry.getKey()))
 					isSuccess = networkService.search(search);
 				else
 					isSuccess = pluginsService.search(search);
 
-				if(isSuccess)
+				if (isSuccess)
 					break;
 			}
 			catch (Exception e)
@@ -122,29 +140,41 @@ public class SearchService
 	public void delete(int id)
 	{
 		Optional<Search> opt = searchRepository.findById(id);
-		opt.ifPresent(search -> searchRepository.delete(search));
+		opt.ifPresent(searchRepository::delete);
 	}
 
 	public Search getSearchById(Integer id)
 	{
-		Optional<Search> opt = searchRepository.findById(id);
-		return opt.get();
+		return searchRepository.findById(id).orElseThrow();
 	}
-
 
 	public void checkDownloads()
 	{
 		List<Search> searchList = searchRepository.findByStatus(SearchStatus.DOWNLOADING);
-		searchList.forEach(search -> {
-			try
+		searchList.forEach(this::processDownloadCheck);
+	}
+
+	@Transactional
+	protected void processDownloadCheck(Search search)
+	{
+		try
+		{
+			SearchStatus previousStatus = search.getStatus();
+			networkService.checkDownloads(search);
+			pluginsService.checkDownloads(search);
+
+			if (search.getStatus() != previousStatus)
 			{
-				networkService.checkDownloads(search);
-				pluginsService.checkDownloads(search);
+				if (search.getStatus() == SearchStatus.COMPLETED)
+				{
+					downloadService.process(search);
+				}
+				searchRepository.save(search);
 			}
-			catch (Exception e)
-			{
-				logger.debug(e.getLocalizedMessage());
-			}
-		});
+		}
+		catch (Exception e)
+		{
+			logger.error("Download check failed for search id={}: {}", search.getId(), e.getMessage());
+		}
 	}
 }

@@ -3,7 +3,6 @@ package devmalik19.litrarr.controller;
 import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.service.metadata.MetaDataService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
@@ -14,14 +13,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 public class HomeController
 {
-	@Autowired
-	private MetaDataService metaDataService;
+	private final MetaDataService metaDataService;
 
-    @GetMapping("/")
-    public String home()
-    {
-        return "home";
-    }
+	public HomeController(MetaDataService metaDataService)
+	{
+		this.metaDataService = metaDataService;
+	}
+
+	@GetMapping("/")
+	public String home()
+	{
+		return "home";
+	}
 
 	@GetMapping("/home/search")
 	public String search(
@@ -32,7 +35,7 @@ public class HomeController
 		Model model
 	) throws Exception
 	{
-		Page<MetadataResult> searchResultsPage = metaDataService.search(title, author, publisher,  pageable);
+		Page<MetadataResult> searchResultsPage = metaDataService.search(title, author, publisher, pageable);
 		return PaginationHelper.prepareResponse(searchResultsPage, pageable, model);
 	}
 }

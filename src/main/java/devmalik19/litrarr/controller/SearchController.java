@@ -7,7 +7,6 @@ import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.service.SearchService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +22,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 public class SearchController
 {
+	private final SearchService searchService;
 
-    @Autowired
-    private SearchService searchService;
+	public SearchController(SearchService searchService)
+	{
+		this.searchService = searchService;
+	}
 
 	@GetMapping("/search")
 	public String history(Pageable pageable, Model model) throws Exception
@@ -34,7 +36,6 @@ public class SearchController
 		return "history";
 	}
 
-
 	@GetMapping("/search/{id}")
 	public String viewDetails(@PathVariable("id") Integer id, Model model)
 	{
@@ -42,13 +43,13 @@ public class SearchController
 		return "history-details";
 	}
 
-    @PostMapping("/search/download")
-    @ResponseBody
-    public ResponseEntity<String> download(@RequestBody @Valid DownloadRequest downloadRequest) throws Exception
-    {
+	@PostMapping("/search/download")
+	@ResponseBody
+	public ResponseEntity<String> download(@RequestBody @Valid DownloadRequest downloadRequest) throws Exception
+	{
 		searchService.addToDownloadClients(downloadRequest);
-        return ResponseEntity.ok("");
-    }
+		return ResponseEntity.ok("");
+	}
 
 	@PostMapping("/search/add")
 	@ResponseBody

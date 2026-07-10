@@ -7,12 +7,12 @@ public enum Protocol
 
     public static boolean isTorrent(String value)
     {
-        return value.toUpperCase().equals(Protocol.TORRENT.name());
+        return TORRENT.name().equalsIgnoreCase(value);
     }
 
     public static boolean isUsenet(String value)
     {
-        return value.toUpperCase().equals(Protocol.USENET.name());
+        return USENET.name().equalsIgnoreCase(value);
     }
 
 

@@ -148,6 +148,7 @@ public class PaginationHelper
 				break;
 			case "author":
 				comparator = Comparator.comparing(MetadataResult::getAuthor, Comparator.nullsLast(String::compareTo));
+				break;
 			case "year":
 				comparator = Comparator.comparing(MetadataResult::getYear, Comparator.nullsLast(String::compareTo));
 				break;

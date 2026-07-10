@@ -1,4 +1,4 @@
-package devmalik19.litrarr.helper;
+package devmalik19.litrarr.view;
 
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;

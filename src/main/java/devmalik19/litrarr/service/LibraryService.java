@@ -21,29 +21,32 @@ import java.util.Map;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Service
 public class LibraryService
 {
-	Logger logger = LoggerFactory.getLogger(LibraryService.class);
+	private static final Logger logger = LoggerFactory.getLogger(LibraryService.class);
 
-	@Autowired
-	private FileSystemService fileSystemService;
+	private final FileSystemService fileSystemService;
+	private final MetaDataService metaDataService;
+	private final LibraryRepository libraryRepository;
+	private final ItemRepository itemRepository;
+	private final LibraryFilterRepository libraryFilterRepository;
 
-	@Autowired
-	private MetaDataService metaDataService;
-
-	@Autowired
-	private LibraryRepository libraryRepository;
-
-	@Autowired
-	private ItemRepository itemRepository;
-
-	@Autowired
-	private LibraryFilterRepository libraryFilterRepository;
+	public LibraryService(FileSystemService fileSystemService,
+						  MetaDataService metaDataService,
+						  LibraryRepository libraryRepository,
+						  ItemRepository itemRepository,
+						  LibraryFilterRepository libraryFilterRepository)
+	{
+		this.fileSystemService = fileSystemService;
+		this.metaDataService = metaDataService;
+		this.libraryRepository = libraryRepository;
+		this.itemRepository = itemRepository;
+		this.libraryFilterRepository = libraryFilterRepository;
+	}
 
 	public void dbCleanUp() throws Exception
 	{
@@ -163,7 +166,7 @@ public class LibraryService
 		FileSystem fileSystem = FileSystems.getDefault();
 		return dbFilters.stream()
 			.map(filter -> {
-				return fileSystem.getPathMatcher("glob:" + filter + "{,/**}");
+				return fileSystem.getPathMatcher("glob:" + filter.getPath() + "{,/**}");
 			})
 			.toList();
 	}

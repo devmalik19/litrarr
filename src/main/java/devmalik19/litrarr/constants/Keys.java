@@ -5,4 +5,5 @@ public interface Keys
 	String LIBRARY_PATHS = "library_paths";
 	String PRIORITY = "priority";
 	String PATTERNS = "patterns";
+	String METADATA_TAGGING = "metadata_tagging";
 }

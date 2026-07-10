@@ -9,6 +9,14 @@ public enum Category
 	AUDIOBOOKS,
 	MANGA;
 
+	public FolderType getRootFolderType()
+	{
+		return switch (this) {
+			case BOOKS, AUDIOBOOKS -> FolderType.AUTHOR;
+			case COMICS, MANGA -> FolderType.TITLE;
+		};
+	}
+
 	public static boolean isMatch(String type)
 	{
 		if (!StringUtils.hasText(type))
@@ -16,7 +24,7 @@ public enum Category
 
 		try
 		{
-			FileTypes.valueOf(type.toUpperCase());
+			Category.valueOf(type.toUpperCase());
 			return true;
 		}
 		catch (IllegalArgumentException e)

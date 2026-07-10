@@ -1,4 +1,4 @@
-package devmalik19.litrarr.helper;
+package devmalik19.litrarr.lifecycle;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +22,8 @@ import org.springframework.util.StringUtils;
 @Component
 public class StartupTasks
 {
-	private final ObjectMapper objectMapper = new ObjectMapper();
+	private static final ObjectMapper objectMapper = new ObjectMapper();
+
 	private final NetworkService networkService;
 	private final SettingsRepository settingsRepository;
 	private final LibraryService libraryService;
@@ -30,10 +31,10 @@ public class StartupTasks
 	private final SearchService searchService;
 
 	public StartupTasks(NetworkService networkService,
-		SettingsRepository settingsRepository,
-		LibraryService libraryService,
-		FileSystemService fileSystemService,
-		SearchService searchService)
+						SettingsRepository settingsRepository,
+						LibraryService libraryService,
+						FileSystemService fileSystemService,
+						SearchService searchService)
 	{
 		this.networkService = networkService;
 		this.settingsRepository = settingsRepository;
@@ -57,14 +58,14 @@ public class StartupTasks
 	public void loadSettings()
 	{
 		List<Setting> settingList = settingsRepository.findAll();
-		settingList.forEach(setting -> Settings.store.put(setting.getKey(),setting.getValue()));
+		settingList.forEach(setting -> Settings.store.put(setting.getKey(), setting.getValue()));
 	}
 
 	private void setSkipPatterns() throws Exception
 	{
 		List<String> userPatterns = new ArrayList<>();
 		String patterns = Settings.store.get(Keys.PATTERNS);
-		if(StringUtils.hasText(patterns))
+		if (StringUtils.hasText(patterns))
 			userPatterns = objectMapper.readValue(patterns, new TypeReference<List<String>>() {});
 		fileSystemService.setSkipPatterns(userPatterns);
 	}

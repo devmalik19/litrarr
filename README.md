@@ -1,20 +1,44 @@
+# Litrarr
+
 One stop solution to all your literature needs.
 
-Comics
-Anime
-Ebooks
-Audiobooks
+- Comics
+- Manga
+- Ebooks
+- Audiobooks
 
+## Requirements
+
+- Java 25 (JDK 25)
+- Maven (or use the included `mvnw` wrapper)
+
+## Running locally
+
+```bash
+./mvnw spring-boot:run
+```
+
+The app starts on port `8021` by default: http://localhost:8021
+
+## Building
+
+```bash
+./mvnw package -DskipTests
+```
+
+This produces a runnable jar at `target/litrarr-0.0.1-SNAPSHOT.jar`.
+
+## Docker
 
 ### Docker command
 
-````
+```
 docker run -p 8021:8021 ghcr.io/devmalik19/litrarr:latest
-````
+```
 
 ### Docker compose
 
-````
+```yaml
 version: "3.8"
 services:
     litrarr:
@@ -37,13 +61,36 @@ services:
             # - ENCRYPTION_KEY=12345678901234567890123456789012 # Optional, please replace this with a 32 byte random string to enable encryption and decryption of credentials in DB
             # - LOGGING_LEVEL=DEBUG  # Optional
         restart: unless-stopped
-````
+```
 
-# TODO
-## alpha release :
-1. Metadata Search and add to library
+## Tech Stack
+
+- Spring Boot 4.0
+- Java 25
+- Thymeleaf (server-side rendering)
+- SQLite (default) or MariaDB
+- Flyway (database migrations)
+- Caffeine (caching)
+
+## Integrations
+
+- **Prowlarr** — indexer management and search
+- **qBittorrent** — torrent download client
+- **SABnzbd** — usenet download client
+- **Slskd** — P2P (Soulseek) search and download
+- **Google Books API** — book metadata
+
+## Supported File Types
+
+`CBZ`, `CBR`, `EPUB`, `PDF`, `MOBI`, `AZW3`, `MP3`, `M4B`, `FLAC`, `OGG`
+
+## TODO
+
+### Alpha release
+1. Metadata search and add to library
 2. Search by issues in comics and manga
 
-## Good to have (Not needed) :
-1. Files icons and design
-2. How to run on local
+### Good to have
+1. File icons and design
+2. ComicVine metadata integration
+3. MyAnimeList metadata integration

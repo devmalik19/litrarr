@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig
 {
     @Bean
-    @ConditionalOnBooleanProperty(value = "DISABLE_SECURITY", havingValue = true)
+    @ConditionalOnBooleanProperty("DISABLE_SECURITY")
     public SecurityFilterChain disableSecurity(HttpSecurity httpSecurity)
     {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
@@ -26,7 +26,7 @@ public class SecurityConfig
 	{
 		httpSecurity.authorizeHttpRequests(auth->
 			auth
-				.requestMatchers("/images/logos/**").permitAll()
+				.requestMatchers("/images/**", "/css/**", "/js/**", "/cache/**").permitAll()
 				.anyRequest().authenticated()
 		).formLogin(Customizer.withDefaults());
 		return httpSecurity.build();

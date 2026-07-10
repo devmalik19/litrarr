@@ -12,7 +12,7 @@ public class Constants
 	public static String CONFIG_PATH;
     public static String DOWNLOAD_PATH;
 	public static String LIBRARY_PATH;
-	public static String SEARCH_CATEGORY = "3000";
+	public static String SEARCH_CATEGORY = "7000,7020,3030,7030";
 	public static String ENCRYPTION_KEY;
 	public static int QUERY_LIMIT = 1000;
 	public static List<PathMatcher> pathMatcherList;
