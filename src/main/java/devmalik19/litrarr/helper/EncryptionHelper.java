@@ -11,7 +11,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class EncryptionHelper
 {
-	static Logger logger = LoggerFactory.getLogger(EncryptionHelper.class);
+	private static final Logger logger = LoggerFactory.getLogger(EncryptionHelper.class);
 
 	public static String encrypt(String value, String key)
     {

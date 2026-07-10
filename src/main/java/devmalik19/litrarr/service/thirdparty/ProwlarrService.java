@@ -2,11 +2,11 @@ package devmalik19.litrarr.service.thirdparty;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.constants.Constants;
-import devmalik19.litrarr.constants.Settings;
 import devmalik19.litrarr.data.dao.Index;
 import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.data.dto.Tag;
 import devmalik19.litrarr.helper.PriorityHelper;
+import devmalik19.litrarr.helper.SettingsHelper;
 import devmalik19.litrarr.repository.IndexRepository;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 
@@ -30,14 +30,17 @@ public class ProwlarrService
 	private final HttpRequestService httpRequestService;
 	private final IndexRepository indexRepository;
 	private final ObjectMapper objectMapper;
+	private final SettingsHelper settingsHelper;
 
 	public ProwlarrService(HttpRequestService httpRequestService,
 						   IndexRepository indexRepository,
-						   ObjectMapper objectMapper)
+						   ObjectMapper objectMapper,
+						   SettingsHelper settingsHelper)
 	{
 		this.httpRequestService = httpRequestService;
 		this.indexRepository = indexRepository;
 		this.objectMapper = objectMapper;
+		this.settingsHelper = settingsHelper;
 	}
 
     public String checkConnection(ConnectionSettings connectionSettings)
@@ -49,11 +52,9 @@ public class ProwlarrService
 	{
 		logger.info("Starting indexes sync");
 
-		String value = Settings.store.get(NetworkService.PROWLARR);
-		if(StringUtils.hasText(value))
+		ConnectionSettings prowlarrSettings = settingsHelper.getConnectionSettings(NetworkService.PROWLARR);
+		if (prowlarrSettings != null)
 		{
-			ConnectionSettings prowlarrSettings = objectMapper.readValue(value, ConnectionSettings.class);
-
 			String url = String.format("%s/api/v1/indexer", prowlarrSettings.getUrl());
 
 			Map<String, String> headers = new HashMap<>();
@@ -82,7 +83,7 @@ public class ProwlarrService
 										.anyMatch(indexTag-> prowlarrTags.get(indexTag).contains(category));
 
 						})
-						.forEach(index -> indexRepository.save(index));
+						.forEach(indexRepository::save);
 			}
 		}
 		logger.info("Indexes sync finish!");
@@ -93,10 +94,9 @@ public class ProwlarrService
 	{
 		HashMap<String, Integer> priority = PriorityHelper.getPriority();
 
-		String value = Settings.store.get(NetworkService.PROWLARR);
-		if(StringUtils.hasText(value))
+		ConnectionSettings prowlarrSettings = settingsHelper.getConnectionSettings(NetworkService.PROWLARR);
+		if (prowlarrSettings != null)
 		{
-			ConnectionSettings prowlarrSettings = objectMapper.readValue(value, ConnectionSettings.class);
 			List<Index> indexes = indexRepository.findAll();
 
 			List<String> indexerIds = indexes.stream()

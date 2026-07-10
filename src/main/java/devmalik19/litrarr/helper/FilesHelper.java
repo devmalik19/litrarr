@@ -8,7 +8,7 @@ public class FilesHelper
 {
 	private static final double MIN_SIMILARITY = 0.80;
 	private static final LevenshteinDistance levenshtein = LevenshteinDistance.getDefaultInstance();
-	private static Logger logger = LoggerFactory.getLogger(FilesHelper.class);
+	private static final Logger logger = LoggerFactory.getLogger(FilesHelper.class);
 
 	public static boolean isMatch(String term, String filename)
 	{

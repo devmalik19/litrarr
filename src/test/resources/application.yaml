@@ -18,4 +18,4 @@ app:
         library: "/library"
     encryption:
         key: "ENCRYPTION_KEY"
-    user-agent: "Singlarr/1.0"
+    user-agent: "Litrarr/1.0"
