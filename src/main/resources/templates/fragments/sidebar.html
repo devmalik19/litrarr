@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<div id="sidebar" class="sidebar"  th:fragment="sidebar">
+
+        <div class="sidebar-section">
+            <div class="sidebar-heading">Home</div>
+            <ul class="sidebar-submenu"  th:classappend="${section == '/' || section.contains('/library') || section.contains('/search')} ? 'sidebar-active' ">
+                <li>
+                    <a  th:classappend="${section == '/'} ? 'submenu-active'" th:href="@{/}">Home</a>
+                </li>
+				<li>
+					<a  th:classappend="${section.contains('/library/comics')} ? 'submenu-active'" th:href="@{/library/comics}">Comics</a>
+				</li>
+				<li>
+					<a  th:classappend="${section.contains('/library/manga')} ? 'submenu-active'" th:href="@{/library/manga}">Manga</a>
+				</li>
+				<li>
+					<a  th:classappend="${section.contains('/library/books')} ? 'submenu-active'" th:href="@{/library/books}">Books</a>
+				</li>
+				<li>
+					<a  th:classappend="${section.contains('/library/audiobooks')} ? 'submenu-active'" th:href="@{/library/audiobooks}">Audiobooks</a>
+				</li>
+				<li>
+					<a  th:classappend="${section.contains('/search')} ? 'submenu-active'" th:href="@{/search}">History</a>
+				</li>
+            </ul>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-heading">Settings</div>
+            <ul class="sidebar-submenu" th:classappend="${section.contains('/settings')} ? 'sidebar-active'">
+				<li>
+					<a  th:classappend="${section == '/settings'}  ? 'submenu-active'" th:href="@{/settings}">General</a>
+				</li>
+                <li>
+                    <a  th:classappend="${section.contains('/indexes')} ? 'submenu-active'" th:href="@{/settings/indexes}">Search Indexes</a>
+                </li>
+                <li>
+                    <a  th:classappend="${section.contains('/clients')} ? 'submenu-active'" th:href="@{/settings/clients}">Download Clients</a>
+                </li>
+				<li>
+					<a  th:classappend="${section.contains('/services')} ? 'submenu-active'" th:href="@{/settings/services}">Other Services</a>
+				</li>
+            </ul>
+        </div>
+
+	</div>
+</html>
+

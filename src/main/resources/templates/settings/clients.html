@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<body th:replace="~{layouts/layout :: base('Download Clients')}">
+		<div th:fragment="content">
+			<h2>Download Clients</h2>
+
+			<div class="grid">
+				<div class="card" data-id="qbt"  onclick="toggleDialogWindow(this)">
+					qBittorrent
+				</div>
+				<div class="card" data-id="sabnzbd"  onclick="toggleDialogWindow(this)">
+					Sabnzbd
+				</div>
+			</div>
+
+			<div th:replace="~{fragments/dialog :: dialog('Add qBittorrent', 'qbt' , '/settings/save/qbt?redirect=clients', '/settings/indexes/check/qbt')}">
+				<div class="form-body" th:fragment="qbt"  th:object="${settings.get('qbt')}">
+
+					<div class="form-row">
+						<label for="name_qbt">Name</label>
+						<input id="name_qbt" name="name"  th:value="*{name}"  placeholder="qBittorrent" required/>
+					</div>
+
+					<div class="form-row">
+						<label for="url_qbt">URL</label>
+						<input id="url_qbt" name="url"  th:value="*{url}"  type="url" placeholder="http://localhost:9696" required/>
+					</div>
+
+					<div class="form-row">
+						<label for="username_qbt">Username</label>
+						<input id="username_qbt" name="username"  th:value="*{username}" required/>
+					</div>
+
+					<div class="form-row">
+						<label for="password_qbt">Password</label>
+						<input id="password_qbt" name="password"  th:value="*{password}"  type="password" required/>
+					</div>
+
+					<div class="form-row">
+						<label for="category_qbt">Category</label>
+						<input id="category_qbt" name="category"  th:value="*{category}"  />
+					</div>
+
+				</div>
+			</div>
+
+			<div th:replace="~{fragments/dialog :: dialog('Add Sabnzbd', 'sabnzbd', '/settings/save/sabnzbd?redirect=clients', '/settings/indexes/check/sabnzbd')}">
+				<div class="form-body" th:fragment="sabnzbd"  th:object="${settings.get('sabnzbd')}">
+
+					<div class="form-row">
+						<label for="name_sabnzbd">Name</label>
+						<input id="name_sabnzbd" name="name"  th:value="*{name}"  placeholder="Sabnzbd" required/>
+					</div>
+
+					<div class="form-row">
+						<label for="url_sabnzbd">URL</label>
+						<input id="url_sabnzbd" name="url"  th:value="*{url}"  type="url" placeholder="http://localhost:9696" required/>
+					</div>
+
+					<div class="form-row">
+						<label for="apiKey_sabnzbd">API Key</label>
+						<input id="apiKey_sabnzbd" name="apiKey"  th:value="*{apiKey}"  type="password" required/>
+					</div>
+
+					<div class="form-row">
+						<label for="category_sabnzbd">Category</label>
+						<input id="category_sabnzbd" name="category"  th:value="*{category}"  />
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
