@@ -27,6 +27,9 @@ app:
     encryption:
         key: ${ENCRYPTION_KEY:}
     user-agent: ${USER_AGENT:"Litrarr/1.0"}
+    api-keys:
+        google-books: ${GOOGLE_BOOKS_API_KEY:}
+        comic-vine: ${COMIC_VINE_API_KEY:}
 
 ---
 

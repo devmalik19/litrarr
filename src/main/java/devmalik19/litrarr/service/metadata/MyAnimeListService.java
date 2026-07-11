@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
+import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,11 +32,15 @@ public class MyAnimeListService
 
 	private final HttpRequestService httpRequestService;
 	private final ObjectMapper objectMapper;
+	private final FileSystemService fileSystemService;
 
-	public MyAnimeListService(HttpRequestService httpRequestService, ObjectMapper objectMapper)
+	public MyAnimeListService(HttpRequestService httpRequestService,
+							  ObjectMapper objectMapper,
+							  FileSystemService fileSystemService)
 	{
 		this.httpRequestService = httpRequestService;
 		this.objectMapper = objectMapper;
+		this.fileSystemService = fileSystemService;
 	}
 
 	public void getMetaForLibrary(Library library)
@@ -49,6 +54,14 @@ public class MyAnimeListService
 				MetadataResult first = results.get(0);
 				if (StringUtils.hasText(first.getAuthor()))
 					library.setCreator(first.getAuthor());
+
+				if (StringUtils.hasText(first.getImageUrl()))
+				{
+					String fileName = fileSystemService.downloadImageToCache(
+						first.getImageUrl(), "library", String.valueOf(library.getId()));
+					if (fileName != null)
+						library.setImage(fileName);
+				}
 			}
 		}
 		catch (Exception e)
@@ -113,6 +126,16 @@ public class MyAnimeListService
 				String from = published.path("from").asText(null);
 				if (StringUtils.hasText(from) && from.length() >= 4)
 					result.setYear(from.substring(0, 4));
+
+				// Extract cover image
+				JsonNode images = item.path("images").path("jpg");
+				if (!images.isMissingNode())
+				{
+					String imageUrl = images.path("large_image_url").asText(null);
+					if (!StringUtils.hasText(imageUrl))
+						imageUrl = images.path("image_url").asText(null);
+					result.setImageUrl(imageUrl);
+				}
 
 				results.add(result);
 			}

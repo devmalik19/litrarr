@@ -5,10 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
-import devmalik19.litrarr.helper.SettingsHelper;
+import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -25,19 +26,21 @@ public class ComicVineService
 {
 	private static final Logger logger = LoggerFactory.getLogger(ComicVineService.class);
 	private static final String BASE_URL = "https://comicvine.gamespot.com/api";
-	public static final String SETTINGS_KEY = "comic_vine";
 
 	private final HttpRequestService httpRequestService;
 	private final ObjectMapper objectMapper;
-	private final SettingsHelper settingsHelper;
+	private final FileSystemService fileSystemService;
+
+	@Value("${app.api-keys.comic-vine:}")
+	private String apiKey;
 
 	public ComicVineService(HttpRequestService httpRequestService,
 							ObjectMapper objectMapper,
-							SettingsHelper settingsHelper)
+							FileSystemService fileSystemService)
 	{
 		this.httpRequestService = httpRequestService;
 		this.objectMapper = objectMapper;
-		this.settingsHelper = settingsHelper;
+		this.fileSystemService = fileSystemService;
 	}
 
 	public void getMetaForLibrary(Library library)
@@ -51,6 +54,14 @@ public class ComicVineService
 				MetadataResult first = results.get(0);
 				if (StringUtils.hasText(first.getAuthor()))
 					library.setCreator(first.getAuthor());
+
+				if (StringUtils.hasText(first.getImageUrl()))
+				{
+					String fileName = fileSystemService.downloadImageToCache(
+						first.getImageUrl(), "library", String.valueOf(library.getId()));
+					if (fileName != null)
+						library.setImage(fileName);
+				}
 			}
 		}
 		catch (Exception e)
@@ -84,7 +95,7 @@ public class ComicVineService
 				.queryParam("resources", "volume")
 				.queryParam("query", query)
 				.queryParam("limit", 10)
-				.queryParam("field_list", "name,start_year,publisher,people")
+				.queryParam("field_list", "name,start_year,publisher,people,image")
 				.build()
 				.toUri();
 
@@ -140,6 +151,15 @@ public class ComicVineService
 					}
 				}
 
+				JsonNode image = item.path("image");
+				if (!image.isMissingNode() && !image.isNull())
+				{
+					String imageUrl = image.path("medium_url").asText(null);
+					if (!StringUtils.hasText(imageUrl))
+						imageUrl = image.path("small_url").asText(null);
+					result.setImageUrl(imageUrl);
+				}
+
 				results.add(result);
 			}
 		}
@@ -153,9 +173,6 @@ public class ComicVineService
 
 	private String getApiKey()
 	{
-		var settings = settingsHelper.getConnectionSettings(SETTINGS_KEY);
-		if (settings != null && StringUtils.hasText(settings.getApiKey()))
-			return settings.getApiKey();
-		return null;
+		return StringUtils.hasText(apiKey) ? apiKey : null;
 	}
 }

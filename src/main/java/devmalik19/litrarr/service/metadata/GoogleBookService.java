@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
+import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -27,11 +29,18 @@ public class GoogleBookService
 
 	private final HttpRequestService httpRequestService;
 	private final ObjectMapper objectMapper;
+	private final FileSystemService fileSystemService;
 
-	public GoogleBookService(HttpRequestService httpRequestService, ObjectMapper objectMapper)
+	@Value("${app.api-keys.google-books:}")
+	private String apiKey;
+
+	public GoogleBookService(HttpRequestService httpRequestService,
+							 ObjectMapper objectMapper,
+							 FileSystemService fileSystemService)
 	{
 		this.httpRequestService = httpRequestService;
 		this.objectMapper = objectMapper;
+		this.fileSystemService = fileSystemService;
 	}
 
 	public void getMetaForLibrary(Library library)
@@ -48,6 +57,14 @@ public class GoogleBookService
 				MetadataResult first = results.get(0);
 				if (StringUtils.hasText(first.getAuthor()))
 					library.setCreator(first.getAuthor());
+
+				if (StringUtils.hasText(first.getImageUrl()))
+				{
+					String fileName = fileSystemService.downloadImageToCache(
+						first.getImageUrl(), "library", String.valueOf(library.getId()));
+					if (fileName != null)
+						library.setImage(fileName);
+				}
 			}
 		}
 		catch (Exception e)
@@ -66,14 +83,19 @@ public class GoogleBookService
 	{
 		List<MetadataResult> results = new ArrayList<>();
 
+		String apiKey = getApiKey();
+
 		try
 		{
-			URI uri = UriComponentsBuilder.fromUriString(BASE_URL)
+			UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(BASE_URL)
 				.queryParam("q", query)
 				.queryParam("maxResults", 10)
-				.queryParam("printType", "books")
-				.build()
-				.toUri();
+				.queryParam("printType", "books");
+
+			if (StringUtils.hasText(apiKey))
+				uriBuilder.queryParam("key", apiKey);
+
+			URI uri = uriBuilder.build().toUri();
 
 			Map<String, String> headers = new HashMap<>();
 			headers.put("Accept", "application/json");
@@ -106,6 +128,15 @@ public class GoogleBookService
 				if (publishedDate.length() >= 4)
 					result.setYear(publishedDate.substring(0, 4));
 
+				JsonNode imageLinks = volumeInfo.path("imageLinks");
+				if (!imageLinks.isMissingNode())
+				{
+					String thumbnail = imageLinks.path("thumbnail").asText(null);
+					if (!StringUtils.hasText(thumbnail))
+						thumbnail = imageLinks.path("smallThumbnail").asText(null);
+					result.setImageUrl(thumbnail);
+				}
+
 				results.add(result);
 			}
 		}
@@ -115,5 +146,10 @@ public class GoogleBookService
 		}
 
 		return results;
+	}
+
+	private String getApiKey()
+	{
+		return StringUtils.hasText(apiKey) ? apiKey : null;
 	}
 }

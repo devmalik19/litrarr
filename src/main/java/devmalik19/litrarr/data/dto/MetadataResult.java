@@ -16,6 +16,7 @@ public class MetadataResult
 	private String title;
 	private String author;
 	private String year;
+	private String imageUrl;
 	private Integer library;
 
 	@Override

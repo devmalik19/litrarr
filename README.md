@@ -59,6 +59,8 @@ services:
             # - DB_USER=mariadb # Optional, this is the default value.
             # - DB_PASSWORD=mariadb # Optional, this is the default value.
             # - ENCRYPTION_KEY=12345678901234567890123456789012 # Optional, please replace this with a 32 byte random string to enable encryption and decryption of credentials in DB
+            # - GOOGLE_BOOKS_API_KEY=your-key # Optional, Google Books API key for metadata search
+            # - COMIC_VINE_API_KEY=your-key # Optional, ComicVine API key for comic metadata search
             # - LOGGING_LEVEL=DEBUG  # Optional
         restart: unless-stopped
 ```

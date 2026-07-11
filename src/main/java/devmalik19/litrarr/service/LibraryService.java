@@ -10,6 +10,7 @@ import devmalik19.litrarr.repository.ItemRepository;
 import devmalik19.litrarr.repository.LibraryFilterRepository;
 import devmalik19.litrarr.repository.LibraryRepository;
 import devmalik19.litrarr.service.metadata.MetaDataService;
+import jakarta.persistence.EntityNotFoundException;
 
 import java.nio.file.*;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 @Service
@@ -134,7 +136,19 @@ public class LibraryService
 				}
 
 				library = libraryRepository.save(library);
-				metaDataService.getMetaForLibrary(library, file);
+				if (!library.isMetadataFetched())
+				{
+					try
+					{
+						metaDataService.getMetaForLibrary(library, file);
+						library.setMetadataFetched(true);
+						libraryRepository.save(library);
+					}
+					catch (Exception e)
+					{
+						logger.error("Metadata fetch failed for {}: {}", library.getPath(), e.getMessage());
+					}
+				}
 				savedDirectories.put(path, library);
 			}
 			else
@@ -179,6 +193,31 @@ public class LibraryService
 	public Library findById(Integer id)
 	{
 		return libraryRepository.findById(id).orElse(new Library());
+	}
+
+	public void refreshMetadata(Integer id)
+	{
+		Library library = libraryRepository.findById(id)
+			.orElseThrow(() -> new EntityNotFoundException("Library not found: " + id));
+		library.setMetadataFetched(false);
+		libraryRepository.save(library);
+		try
+		{
+			metaDataService.getMetaForLibrary(library, Path.of(library.getPath()));
+			library.setMetadataFetched(true);
+			libraryRepository.save(library);
+		}
+		catch (Exception e)
+		{
+			logger.error("Metadata refresh failed for {}: {}", library.getPath(), e.getMessage());
+			throw e;
+		}
+	}
+
+	@Transactional
+	public int resetAllMetadataFlags()
+	{
+		return libraryRepository.resetAllMetadataFlags();
 	}
 
 	public static HashMap<Category, String> getLibrariesPath() throws Exception

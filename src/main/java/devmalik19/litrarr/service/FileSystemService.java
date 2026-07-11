@@ -2,6 +2,11 @@ package devmalik19.litrarr.service;
 
 import devmalik19.litrarr.constants.Constants;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.*;
 import java.util.Collections;
 import java.util.List;
@@ -10,6 +15,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 public class FileSystemService
@@ -90,5 +96,68 @@ public class FileSystemService
 				.distinct()
 				.map(fileSystem::getPathMatcher)
 				.toList();
+	}
+
+	/**
+	 * Downloads an image from a URL and saves it to the cache directory.
+	 * Returns the filename if successful, null otherwise.
+	 */
+	public String downloadImageToCache(String imageUrl, String location, String baseName)
+	{
+		if (!StringUtils.hasText(imageUrl))
+			return null;
+
+		try
+		{
+			HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+			HttpRequest request = HttpRequest.newBuilder()
+				.uri(URI.create(imageUrl))
+				.GET()
+				.build();
+
+			HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+			if (response.statusCode() != 200)
+			{
+				logger.error("Failed to download image from '{}': HTTP {}", imageUrl, response.statusCode());
+				return null;
+			}
+
+			String extension = guessImageExtension(imageUrl, response);
+			String fileName = baseName + extension;
+
+			Path targetDirectory = Path.of(Constants.CACHE_PATH).resolve(location);
+			Files.createDirectories(targetDirectory);
+			Path targetFile = targetDirectory.resolve(fileName);
+
+			try (InputStream inputStream = response.body())
+			{
+				Files.copy(inputStream, targetFile, StandardCopyOption.REPLACE_EXISTING);
+			}
+
+			return fileName;
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to download image from '{}': {}", imageUrl, e.getMessage());
+			return null;
+		}
+	}
+
+	private String guessImageExtension(String url, HttpResponse<?> response)
+	{
+		// Try content-type header first
+		String contentType = response.headers().firstValue("content-type").orElse("");
+		if (contentType.contains("png")) return ".png";
+		if (contentType.contains("gif")) return ".gif";
+		if (contentType.contains("webp")) return ".webp";
+		if (contentType.contains("jpeg") || contentType.contains("jpg")) return ".jpg";
+
+		// Fall back to URL extension
+		String path = url.toLowerCase();
+		if (path.contains(".png")) return ".png";
+		if (path.contains(".gif")) return ".gif";
+		if (path.contains(".webp")) return ".webp";
+
+		return ".jpg";
 	}
 }

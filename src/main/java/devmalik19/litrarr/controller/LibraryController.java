@@ -9,7 +9,9 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/library")
@@ -42,5 +44,28 @@ public class LibraryController
 		model.addAttribute("title", StringUtils.capitalize(categoryStr.toLowerCase()));
 		model.addAttribute("library", libraryService.getLibrary(type, category));
 		return "library";
+	}
+
+	@PostMapping("/metadata/{id}")
+	public String refreshMetadata(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes)
+	{
+		try
+		{
+			libraryService.refreshMetadata(id);
+			redirectAttributes.addFlashAttribute("message", "Metadata refreshed successfully.");
+		}
+		catch (Exception e)
+		{
+			redirectAttributes.addFlashAttribute("error", "Metadata refresh failed: " + e.getMessage());
+		}
+		return "redirect:/library/view/" + id;
+	}
+
+	@PostMapping("/metadata/all")
+	public String refreshAllMetadata(RedirectAttributes redirectAttributes)
+	{
+		int count = libraryService.resetAllMetadataFlags();
+		redirectAttributes.addFlashAttribute("message", count + " library entries reset. Metadata will be re-fetched on next scan.");
+		return "redirect:/library";
 	}
 }

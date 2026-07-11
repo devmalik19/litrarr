@@ -1,5 +1,47 @@
 /* CSS for elements inside the main content */
 
+.flash-message
+{
+	padding: 12px 16px;
+	border-radius: var(--border-radius);
+	margin-bottom: 16px;
+	font-size: 0.95rem;
+}
+
+.flash-success
+{
+	background-color: #1a3a1a;
+	color: #4ade80;
+	border: 1px solid #4ade80;
+}
+
+.flash-error
+{
+	background-color: #3a1a1a;
+	color: #f87171;
+	border: 1px solid #f87171;
+}
+
+.page-header
+{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.page-header h2
+{
+	margin: 0;
+	flex-grow: 1;
+}
+
+.inline-form
+{
+	padding: 0;
+	margin: 0;
+}
+
 h2
 {
 	border-bottom: 2px solid #ccc;
