@@ -1,16 +1,13 @@
 package devmalik19.litrarr.service.plugins;
 
-import devmalik19.litrarr.helper.SearchHelper;
-import devmalik19.litrarr.helper.SettingsHelper;
 import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
-import devmalik19.litrarr.data.dto.DownloadState;
-import devmalik19.litrarr.helper.FilesHelper;
 import devmalik19.litrarr.repository.SearchRepository;
-import devmalik19.litrarr.service.plugins.SlskdService.SearchResult;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,69 +17,81 @@ public class PluginsService
 {
 	private static final Logger logger = LoggerFactory.getLogger(PluginsService.class);
 
-	public static final String SLSKD = "slskd";
-	public static final List<String> services = List.of(SLSKD);
-
-	private final SlskdService slskdService;
-	private final SettingsHelper settingsHelper;
+	private final Map<String, PluginHandler> handlersByService;
+	private final Map<String, PluginHandler> handlersByPending;
+	private final List<PluginHandler> handlers;
 	private final SearchRepository searchRepository;
 
-	public PluginsService(SlskdService slskdService,
-						  SettingsHelper settingsHelper,
-						  SearchRepository searchRepository)
+	public PluginsService(List<PluginHandler> handlers, SearchRepository searchRepository)
 	{
-		this.slskdService = slskdService;
-		this.settingsHelper = settingsHelper;
+		this.handlers = handlers;
 		this.searchRepository = searchRepository;
+
+		this.handlersByService = handlers.stream()
+			.collect(Collectors.toMap(PluginHandler::getServiceName, Function.identity()));
+
+		this.handlersByPending = handlers.stream()
+			.collect(Collectors.toMap(PluginHandler::getPendingServiceName, Function.identity()));
 	}
 
+	/** All registered plugin service names (for priority configuration) */
+	public List<String> getServiceNames()
+	{
+		return handlers.stream().map(PluginHandler::getServiceName).toList();
+	}
 
 	public String check(String key, ConnectionSettings connectionSettings)
 	{
-		return switch (key) {
-			case SLSKD -> slskdService.checkConnection(connectionSettings);
-			default -> null;
-		};
+		PluginHandler handler = handlersByService.get(key);
+		return handler != null ? handler.checkConnection(connectionSettings) : null;
 	}
 
 	public HashMap<String, ConnectionSettings> getConnectionsSettingsForServices()
 	{
-		HashMap<String, ConnectionSettings> connectionSettingsList = new HashMap<>();
-		connectionSettingsList.put(SLSKD, settingsHelper.getConnectionSettingsOrDefault(SLSKD));
-		return connectionSettingsList;
+		HashMap<String, ConnectionSettings> settings = new HashMap<>();
+		for (PluginHandler handler : handlers)
+		{
+			settings.put(handler.getServiceName(), handler.getConnectionSettings());
+		}
+		return settings;
 	}
 
+	/**
+	 * Tries each registered plugin in order until one successfully submits a search.
+	 */
 	public boolean search(Search search) throws Exception
 	{
-		return SearchHelper.progressiveSearch(search, searchRepository, this::search);
-	}
-
-
-	public DownloadState search(String query) throws Exception
-	{
-		logger.info("Searching plugins services");
-
-		DownloadState downloadState = new DownloadState();
-		List<SearchResult> results = slskdService.search(query);
-
-		logger.info("{} results found from slskdService", results.size());
-
-		for(SearchResult result: results)
+		for (PluginHandler handler : handlers)
 		{
-			logger.debug("Matching {} with search results {}", query, result.fullPath());
-			if(FilesHelper.isMatch(query, result.fullPath()))
+			if (handler.search(search))
 			{
-				logger.info("Match successfully, adding to download {}", result.fullPath());
-				downloadState = slskdService.download(result.username(), result.fullPath(), result.fileSize());
-				break;
+				searchRepository.save(search);
+				return true;
 			}
 		}
-		return downloadState;
+		return false;
 	}
 
+	/**
+	 * Routes download checks to the correct plugin based on the service name in DownloadState.
+	 */
 	public void checkDownloads(Search search) throws Exception
 	{
-		if(Objects.equals(search.getData().getService(), PluginsService.SLSKD))
-			slskdService.checkDownloads(search);
+		if (search.getData() == null) return;
+
+		String service = search.getData().getService();
+
+		PluginHandler handler = handlersByPending.get(service);
+		if (handler != null)
+		{
+			handler.checkSearchAndDownload(search);
+			return;
+		}
+
+		handler = handlersByService.get(service);
+		if (handler != null)
+		{
+			handler.checkDownloads(search);
+		}
 	}
 }

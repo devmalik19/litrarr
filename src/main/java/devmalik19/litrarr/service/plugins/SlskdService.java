@@ -6,21 +6,23 @@ import devmalik19.litrarr.constants.SearchStatus;
 import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 import devmalik19.litrarr.data.dto.DownloadState;
+import devmalik19.litrarr.helper.FilesHelper;
 import devmalik19.litrarr.helper.SettingsHelper;
 import devmalik19.litrarr.service.HttpRequestService;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
-public class SlskdService
+public class SlskdService implements PluginHandler
 {
 	private static final Logger logger = LoggerFactory.getLogger(SlskdService.class);
+
+	private static final String SERVICE_NAME = "slskd";
+	private static final String PENDING_NAME = "slskd_pending";
 
 	private final HttpRequestService httpRequestService;
 	private final ObjectMapper objectMapper;
@@ -35,6 +37,19 @@ public class SlskdService
 		this.settingsHelper = settingsHelper;
 	}
 
+	@Override
+	public String getServiceName()
+	{
+		return SERVICE_NAME;
+	}
+
+	@Override
+	public String getPendingServiceName()
+	{
+		return PENDING_NAME;
+	}
+
+	@Override
 	public String checkConnection(ConnectionSettings connectionSettings)
 	{
 		Map<String, String> headers = buildHeaders(connectionSettings);
@@ -42,9 +57,90 @@ public class SlskdService
 			String.format("%s/api/v0/session/enabled", connectionSettings.getUrl()), headers);
 	}
 
+	@Override
+	public ConnectionSettings getConnectionSettings()
+	{
+		return settingsHelper.getConnectionSettingsOrDefault(SERVICE_NAME);
+	}
+
+	@Override
+	public boolean search(Search search) throws Exception
+	{
+		String query = search.getAuthor() + " " + search.getTitle();
+		String searchId = submitSearch(query);
+
+		if (searchId == null)
+			return false;
+
+		DownloadState downloadState = new DownloadState();
+		downloadState.setService(PENDING_NAME);
+		downloadState.setIdentifier(searchId);
+		search.setData(downloadState);
+		search.setStatus(SearchStatus.DOWNLOADING);
+
+		logger.info("Slskd search submitted for '{}', will poll for results", query);
+		return true;
+	}
+
+	@Override
+	public boolean checkSearchAndDownload(Search search) throws Exception
+	{
+		ConnectionSettings connectionSettings = settingsHelper.getConnectionSettings(SERVICE_NAME);
+		if (connectionSettings == null) return false;
+
+		DownloadState state = search.getData();
+		String searchId = state.getIdentifier();
+		String query = search.getAuthor() + " " + search.getTitle();
+
+		Map<String, String> headers = buildHeaders(connectionSettings);
+
+		String response = httpRequestService.doGetRequest(
+			String.format("%s/api/v0/searches/%s", connectionSettings.getUrl(), searchId), headers);
+
+		if (!StringUtils.hasText(response))
+			return false;
+
+		JsonNode jsonNode = objectMapper.readTree(response);
+		if (!jsonNode.has("isComplete") || !jsonNode.get("isComplete").asBoolean())
+		{
+			logger.info("Slskd search {} still in progress", searchId);
+			return false;
+		}
+
+		response = httpRequestService.doGetRequest(
+			String.format("%s/api/v0/searches/%s/responses", connectionSettings.getUrl(), searchId), headers);
+
+		jsonNode = objectMapper.readTree(response);
+		for (JsonNode userResponse : jsonNode)
+		{
+			String username = userResponse.get("username").asText();
+			JsonNode files = userResponse.get("files");
+			for (JsonNode file : files)
+			{
+				String filename = file.get("filename").asText();
+				long size = file.get("size").asLong();
+
+				if (FilesHelper.isMatch(query, filename))
+				{
+					logger.info("Slskd match found, downloading: {}", filename);
+					DownloadState downloadState = download(username, filename, size);
+					if (!downloadState.isEmpty())
+					{
+						search.setData(downloadState);
+						return true;
+					}
+				}
+			}
+		}
+
+		logger.info("Slskd search {} complete but no matching file found for '{}'", searchId, query);
+		return false;
+	}
+
+	@Override
 	public void checkDownloads(Search search) throws Exception
 	{
-		ConnectionSettings connectionSettings = settingsHelper.getConnectionSettings(PluginsService.SLSKD);
+		ConnectionSettings connectionSettings = settingsHelper.getConnectionSettings(SERVICE_NAME);
 		if (connectionSettings == null) return;
 
 		Map<String, String> headers = buildHeaders(connectionSettings);
@@ -91,64 +187,27 @@ public class SlskdService
 		}
 	}
 
-	public record SearchResult(String username, String fullPath, long fileSize) {}
-
-	public List<SearchResult> search(String search) throws Exception
+	private String submitSearch(String query) throws Exception
 	{
-		List<SearchResult> searchResultList = new ArrayList<>();
-
-		ConnectionSettings connectionSettings = settingsHelper.getConnectionSettings(PluginsService.SLSKD);
-		if (connectionSettings == null) return searchResultList;
+		ConnectionSettings connectionSettings = settingsHelper.getConnectionSettings(SERVICE_NAME);
+		if (connectionSettings == null) return null;
 
 		Map<String, String> headers = buildHeaders(connectionSettings);
-		String json = "{\"SearchText\": \"" + search + "\"}";
+		String json = "{\"SearchText\": \"" + query + "\"}";
 		String response = httpRequestService.doPostRequest(
 			String.format("%s/api/v0/searches", connectionSettings.getUrl()), json, headers);
+
 		JsonNode jsonNode = objectMapper.readTree(response);
 		String searchId = jsonNode.get("id").asText();
-
-		boolean isComplete = false;
-		int maxAttempts = 10;
-		int attempts = 0;
-		do
-		{
-			TimeUnit.SECONDS.sleep(60);
-			response = httpRequestService.doGetRequest(
-				String.format("%s/api/v0/searches/%s", connectionSettings.getUrl(), searchId), headers);
-			jsonNode = objectMapper.readTree(response);
-			if (jsonNode.has("isComplete"))
-				isComplete = jsonNode.get("isComplete").asBoolean();
-
-			attempts++;
-		}
-		while (!isComplete && attempts < maxAttempts);
-
-		if (isComplete)
-		{
-			response = httpRequestService.doGetRequest(
-				String.format("%s/api/v0/searches/%s/responses", connectionSettings.getUrl(), searchId), headers);
-			jsonNode = objectMapper.readTree(response);
-			for (JsonNode userResponse : jsonNode)
-			{
-				String username = userResponse.get("username").asText();
-				JsonNode files = userResponse.get("files");
-				for (JsonNode file : files)
-				{
-					String filename = file.get("filename").asText();
-					long size = file.get("size").asLong();
-					searchResultList.add(new SearchResult(username, filename, size));
-				}
-			}
-		}
-
-		return searchResultList;
+		logger.info("Slskd search submitted with id: {} for query: {}", searchId, query);
+		return searchId;
 	}
 
-	public DownloadState download(String username, String fullPath, long fileSize) throws Exception
+	private DownloadState download(String username, String fullPath, long fileSize) throws Exception
 	{
 		DownloadState downloadState = new DownloadState();
 
-		ConnectionSettings connectionSettings = settingsHelper.getConnectionSettings(PluginsService.SLSKD);
+		ConnectionSettings connectionSettings = settingsHelper.getConnectionSettings(SERVICE_NAME);
 		if (connectionSettings == null) return downloadState;
 
 		Map<String, String> headers = buildHeaders(connectionSettings);
@@ -161,7 +220,7 @@ public class SlskdService
 			String uri = String.format("%s/api/v0/transfers/downloads/%s", connectionSettings.getUrl(), username);
 			String response = httpRequestService.doPostRequest(uri, jsonBody, headers);
 			downloadState.setDownloadPath(connectionSettings.getCategory());
-			downloadState.setService(PluginsService.SLSKD);
+			downloadState.setService(SERVICE_NAME);
 			downloadState.setIdentifier(fullPath);
 			logger.info("Download enqueued for {}: {}", username, response);
 		}
