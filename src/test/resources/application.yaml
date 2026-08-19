@@ -16,6 +16,4 @@ app:
         config: "/config"
         download: "/downloads"
         library: "/library"
-    encryption:
-        key: "ENCRYPTION_KEY"
     user-agent: "Litrarr/1.0"

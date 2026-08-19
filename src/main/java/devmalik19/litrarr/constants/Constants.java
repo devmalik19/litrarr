@@ -13,7 +13,6 @@ public class Constants
     public static String DOWNLOAD_PATH;
 	public static String LIBRARY_PATH;
 	public static String SEARCH_CATEGORY = "7000,7020,3030,7030";
-	public static String ENCRYPTION_KEY;
 	public static int QUERY_LIMIT = 1000;
 	public static List<PathMatcher> pathMatcherList;
 	public static String[] IMAGE_TYPES = {".jpg", ".png", ".gif", ".webp"};
@@ -39,18 +38,6 @@ public class Constants
 		LIBRARY_PATH = path;
 	}
 
-	@Value("${app.encryption.key}")
-	public void setEncryptionKey(String key)
-	{
-		if(StringUtils.hasText(key))
-		{
-			if (key.length() < 32)
-				key += "#".repeat(32 - key.length());
-			else
-				key = key.substring(0, 32);
-		}
-		ENCRYPTION_KEY = key;
-	}
 
 	@Value("${app.user-agent}")
 	public void setUserAgent(String key)
