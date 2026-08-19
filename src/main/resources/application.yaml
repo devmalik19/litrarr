@@ -8,12 +8,17 @@ spring:
         name: litrarr
     thymeleaf:
         cache: false
+    datasource:
+        url: "jdbc:sqlite:${app.path.config}/litrarr.db"
+        driver-class-name: org.sqlite.JDBC
+    jpa:
+        database-platform: "org.hibernate.community.dialect.SQLiteDialect"
     flyway:
         baseline-on-migrate: true
-    profiles:
-        validate: false
-        include: "${USER:NONE}"
-        active: "sqlite"
+    security:
+        user:
+            name: ${USER:admin}
+            password: ${PASSWORD:admin}
 
 logging:
     level:
@@ -24,30 +29,9 @@ app:
         config: "${CONFIG_PATH:/config}"
         download: "${DOWNLOAD_PATH:/downloads}"
         library: "${LIBRARY_PATH:/library}"
-    user-agent: ${USER_AGENT:"Litrarr/1.0"}
+    user-agent: ${USER_AGENT:Litrarr/1.0}
     api-keys:
         google-books: ${GOOGLE_BOOKS_API_KEY:}
         comic-vine: ${COMIC_VINE_API_KEY:}
 
----
-
-spring:
-    config:
-        activate:
-            on-profile: "sqlite"
-    datasource:
-        url: "jdbc:sqlite:${app.path.config}/litrarr.db"
-        driver-class-name: org.sqlite.JDBC
-    jpa:
-        database-platform: "org.hibernate.community.dialect.SQLiteDialect"
-
----
-
-spring:
-    config:
-        activate:
-            on-profile: "${USER}"
-    security:
-        user:
-            name: ${USER}
-            password: ${PASSWORD}
+disable-security: ${DISABLE_SECURITY:${USER:true}}
