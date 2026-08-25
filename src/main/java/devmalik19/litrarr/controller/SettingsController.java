@@ -8,6 +8,7 @@ import devmalik19.litrarr.service.SettingsService;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 import java.util.HashMap;
 import java.util.List;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -117,16 +118,40 @@ public class SettingsController
 
 	@PostMapping("/settings/indexes/check/{key}")
 	@ResponseBody
-	public String checkNetworkConnection(@PathVariable String key, @ModelAttribute ConnectionSettings connectionSettings)
+	public ResponseEntity<String> checkNetworkConnection(@PathVariable String key, @ModelAttribute ConnectionSettings connectionSettings)
 	{
-		return settingsService.checkNetworkConnection(key, connectionSettings);
+		try
+		{
+			String result = settingsService.checkNetworkConnection(key, connectionSettings);
+			if (result == null || result.isEmpty())
+			{
+				return ResponseEntity.status(502).body("Connection failed: no response from service");
+			}
+			return ResponseEntity.ok(result);
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.status(502).body(e.getMessage());
+		}
 	}
 
 	@PostMapping("/settings/services/check/{key}")
 	@ResponseBody
-	public String checkPluginConnection(@PathVariable String key, @ModelAttribute ConnectionSettings connectionSettings)
+	public ResponseEntity<String> checkPluginConnection(@PathVariable String key, @ModelAttribute ConnectionSettings connectionSettings)
 	{
-		return settingsService.checkPluginConnection(key, connectionSettings);
+		try
+		{
+			String result = settingsService.checkPluginConnection(key, connectionSettings);
+			if (result == null || result.isEmpty())
+			{
+				return ResponseEntity.status(502).body("Connection failed: no response from service");
+			}
+			return ResponseEntity.ok(result);
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.status(502).body(e.getMessage());
+		}
 	}
 
 	@GetMapping("/settings/sync")

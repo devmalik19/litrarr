@@ -32,7 +32,12 @@ public class SabnzbdService
 
 	public String checkConnection(ConnectionSettings connectionSettings)
 	{
-		return httpRequestService.doGetRequest(String.format("%s/api?mode=queue&output=json&apikey=%s", connectionSettings.getUrl(), connectionSettings.getApiKey()));
+		String response = httpRequestService.doGetRequest(String.format("%s/api?mode=queue&output=json&apikey=%s", connectionSettings.getUrl(), connectionSettings.getApiKey()));
+		if (response != null && response.contains("\"error\""))
+		{
+			throw new RuntimeException("API key incorrect");
+		}
+		return response;
 	}
 
 	public DownloadState addNzb(String url) throws Exception

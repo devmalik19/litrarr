@@ -53,8 +53,13 @@ public class SlskdService implements PluginHandler
 	public String checkConnection(ConnectionSettings connectionSettings)
 	{
 		Map<String, String> headers = buildHeaders(connectionSettings);
-		return httpRequestService.doGetRequest(
+		String response = httpRequestService.doGetRequest(
 			String.format("%s/api/v0/session/enabled", connectionSettings.getUrl()), headers);
+		if (!StringUtils.hasText(response))
+		{
+			throw new RuntimeException("Authentication failed: invalid API key");
+		}
+		return response;
 	}
 
 	@Override

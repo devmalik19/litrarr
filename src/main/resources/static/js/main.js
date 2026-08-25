@@ -98,9 +98,30 @@ async function check(url, element)
     else
     {
         testButton.textContent = '❌';
+        const errorText = await response.text();
+        showFlashError(errorText || 'Connection failed');
     }
 
     testButton.disabled = false;
+}
+
+function showFlashError(message)
+{
+    const existing = document.getElementById('flash-error-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'flash-error-toast';
+    toast.className = 'flash-message flash-error';
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.style.maxWidth = '400px';
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
 }
 
 async function doGetRequest(url)

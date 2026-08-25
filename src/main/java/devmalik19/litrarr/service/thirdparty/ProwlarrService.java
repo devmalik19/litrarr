@@ -45,7 +45,10 @@ public class ProwlarrService
 
     public String checkConnection(ConnectionSettings connectionSettings)
     {
-        return httpRequestService.doGetRequest(String.format("%s/ping", connectionSettings.getUrl()));
+        Map<String, String> headers = new HashMap<>();
+        headers.put("X-Api-Key", connectionSettings.getApiKey());
+        return httpRequestService.doGetRequest(
+            String.format("%s/api/v1/system/status", connectionSettings.getUrl()), headers);
     }
 
     public void sync() throws Exception

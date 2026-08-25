@@ -43,7 +43,12 @@ public class QbittorrentService
 		headers.put("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
 		String body = String.format("username=%s&password=%s", connectionSettings.getUsername(), connectionSettings.getPassword());
 		authResponse = httpRequestService.doPostRequestRaw(String.format("%s/api/v2/auth/login", connectionSettings.getUrl()), body, headers);
-		return authResponse.getBody();
+		String responseBody = authResponse.getBody();
+		if (!"Ok.".equalsIgnoreCase(responseBody))
+		{
+			throw new RuntimeException("Authentication failed: invalid username or password");
+		}
+		return responseBody;
 	}
 
 	public DownloadState addTorrent(String url) throws Exception
