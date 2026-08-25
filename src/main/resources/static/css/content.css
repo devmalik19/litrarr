@@ -36,6 +36,24 @@
 	flex-grow: 1;
 }
 
+.page-header-actions
+{
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.sort-select
+{
+	padding: 8px 12px;
+	border-radius: var(--border-radius);
+	border: 1px solid #ccc;
+	background-color: var(--bg-color, #1e1e1e);
+	color: inherit;
+	font-size: 0.9rem;
+	cursor: pointer;
+}
+
 .inline-form
 {
 	padding: 0;

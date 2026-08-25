@@ -4,6 +4,7 @@ import devmalik19.litrarr.constants.FolderType;
 import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.service.LibraryService;
+import java.util.List;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -37,12 +39,16 @@ public class LibraryController
 	}
 
 	@GetMapping("/{category}")
-	public String library(@PathVariable("category") String categoryStr, Model model)
+	public String library(@PathVariable("category") String categoryStr,
+						  @RequestParam(value = "sort", defaultValue = "name") String sort,
+						  Model model)
 	{
 		Category category = Category.valueOf(categoryStr.toUpperCase());
 		FolderType type = category.getRootFolderType();
+		List<Library> library = libraryService.getLibrary(type, category, sort);
 		model.addAttribute("title", StringUtils.capitalize(categoryStr.toLowerCase()));
-		model.addAttribute("library", libraryService.getLibrary(type, category));
+		model.addAttribute("library", library);
+		model.addAttribute("sort", sort);
 		return "library";
 	}
 

@@ -17,8 +17,8 @@ spring:
         baseline-on-migrate: true
     security:
         user:
-            name: ${USER:admin}
-            password: ${PASSWORD:admin}
+            name: ${APP_USER:}
+            password: ${APP_PASSWORD:}
 
 logging:
     level:
@@ -34,4 +34,3 @@ app:
         google-books: ${GOOGLE_BOOKS_API_KEY:}
         comic-vine: ${COMIC_VINE_API_KEY:}
 
-disable-security: ${DISABLE_SECURITY:${USER:true}}
