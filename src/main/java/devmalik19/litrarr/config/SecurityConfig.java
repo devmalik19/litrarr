@@ -34,6 +34,6 @@ public class SecurityConfig
     {
         String user = env.getProperty("APP_USER");
         String password = env.getProperty("APP_PASSWORD");
-        return user != null && !user.isBlank() && password != null && !password.isBlank();
+        return !"admin".equals(user) || !"admin".equals(password);
     }
 }

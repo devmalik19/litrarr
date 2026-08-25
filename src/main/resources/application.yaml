@@ -17,8 +17,8 @@ spring:
         baseline-on-migrate: true
     security:
         user:
-            name: ${APP_USER:}
-            password: ${APP_PASSWORD:}
+            name: ${APP_USER:admin}
+            password: ${APP_PASSWORD:admin}
 
 logging:
     level:
