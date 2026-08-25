@@ -10,7 +10,7 @@
 				<div class="page-header-actions">
 					<form class="search-form" method="get">
 						<input type="hidden" name="sort" th:value="${sort}"/>
-						<input type="text" name="search" class="search-input" placeholder="Search..." th:value="${search}" />
+						<input type="text" name="search" id="library-search" class="search-input" placeholder="Search..." th:value="${search}" />
 					</form>
 					<select class="sort-select" onchange="window.location.href=this.value">
 						<option th:value="${'?sort=name' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'name'}">Sort: Alphabetical</option>
