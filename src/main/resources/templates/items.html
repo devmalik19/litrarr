@@ -7,9 +7,19 @@
 
 			<div class="page-header">
 				<h2 th:text="${library.name}">Library Name</h2>
-				<form th:action="@{'/library/metadata/' + ${library.id}}" method="post" class="inline-form">
-					<button type="submit" class="button">Refresh Metadata</button>
-				</form>
+				<div class="page-header-actions">
+					<form class="search-form" th:action="@{/library/view/{id}(id=${library.id})}" method="get">
+						<input type="hidden" name="sort" th:value="${sort}"/>
+						<input type="text" name="search" class="search-input" placeholder="Search..." th:value="${search}" />
+					</form>
+					<select class="sort-select" onchange="window.location.href=this.value">
+						<option th:value="${'/library/view/' + library.id + '?sort=name' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'name'}">Sort: Alphabetical</option>
+						<option th:value="${'/library/view/' + library.id + '?sort=directory' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'directory'}">Sort: Directory</option>
+					</select>
+					<form th:action="@{'/library/metadata/' + ${library.id}}" method="post" class="inline-form">
+						<button type="submit" class="button">Refresh Metadata</button>
+					</form>
+				</div>
 			</div>
 
 			<div class="poster-grid">

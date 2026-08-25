@@ -8,9 +8,13 @@
 			<div class="page-header">
 				<h2 th:text="${title}">Library</h2>
 				<div class="page-header-actions">
+					<form class="search-form" method="get">
+						<input type="hidden" name="sort" th:value="${sort}"/>
+						<input type="text" name="search" class="search-input" placeholder="Search..." th:value="${search}" />
+					</form>
 					<select class="sort-select" onchange="window.location.href=this.value">
-						<option th:value="${'?sort=name'}" th:selected="${sort == 'name'}">Sort: Alphabetical</option>
-						<option th:value="${'?sort=directory'}" th:selected="${sort == 'directory'}">Sort: Directory</option>
+						<option th:value="${'?sort=name' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'name'}">Sort: Alphabetical</option>
+						<option th:value="${'?sort=directory' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'directory'}">Sort: Directory</option>
 					</select>
 					<form th:action="@{/library/metadata/all}" method="post" class="inline-form">
 						<button type="submit" class="button">Refresh All Metadata</button>

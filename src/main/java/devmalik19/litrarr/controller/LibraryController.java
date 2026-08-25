@@ -27,13 +27,18 @@ public class LibraryController
 	}
 
 	@GetMapping("/view/{id}")
-	public String items(@PathVariable("id") Integer id, Model model)
+	public String items(@PathVariable("id") Integer id,
+						@RequestParam(value = "sort", defaultValue = "name") String sort,
+						@RequestParam(value = "search", defaultValue = "") String search,
+						Model model)
 	{
 		Library library = libraryService.findById(id);
 
 		model.addAttribute("library", library);
-		model.addAttribute("libraries", library.getLibraryList());
-		model.addAttribute("items", library.getItemList());
+		model.addAttribute("libraries", libraryService.getSortedChildren(library, sort, search));
+		model.addAttribute("items", libraryService.getFilteredItems(library, search));
+		model.addAttribute("sort", sort);
+		model.addAttribute("search", search);
 
 		return "items";
 	}
@@ -41,14 +46,16 @@ public class LibraryController
 	@GetMapping("/{category}")
 	public String library(@PathVariable("category") String categoryStr,
 						  @RequestParam(value = "sort", defaultValue = "name") String sort,
+						  @RequestParam(value = "search", defaultValue = "") String search,
 						  Model model)
 	{
 		Category category = Category.valueOf(categoryStr.toUpperCase());
 		FolderType type = category.getRootFolderType();
-		List<Library> library = libraryService.getLibrary(type, category, sort);
+		List<Library> library = libraryService.getLibrary(type, category, sort, search);
 		model.addAttribute("title", StringUtils.capitalize(categoryStr.toLowerCase()));
 		model.addAttribute("library", library);
 		model.addAttribute("sort", sort);
+		model.addAttribute("search", search);
 		return "library";
 	}
 
