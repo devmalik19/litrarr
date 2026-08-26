@@ -76,6 +76,7 @@
     align-items: center;
 	height: var(--header-height);
     text-decoration: none;
+    color: var(--text-color);
     transition: background-color 0.2s ease;
 }
 

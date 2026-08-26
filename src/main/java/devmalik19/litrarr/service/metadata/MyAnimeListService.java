@@ -12,10 +12,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import devmalik19.litrarr.constants.Constants;
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,16 +26,21 @@ import java.util.Map;
 /**
  * Fetches manga metadata from the Jikan API (public MyAnimeList proxy).
  * No API key required — Jikan is rate-limited to ~3 requests/second.
+ * Temporarily backs off when Jikan returns 504 (upstream failure).
  */
 @Service
 public class MyAnimeListService
 {
 	private static final Logger logger = LoggerFactory.getLogger(MyAnimeListService.class);
 	private static final String BASE_URL = "https://api.jikan.moe/v4";
+	private static final long BACKOFF_DURATION_MINUTES = 30;
 
 	private final HttpRequestService httpRequestService;
 	private final ObjectMapper objectMapper;
 	private final FileSystemService fileSystemService;
+
+	/** When Jikan is down, skip requests until this time. */
+	private volatile Instant backoffUntil = null;
 
 	public MyAnimeListService(HttpRequestService httpRequestService,
 							  ObjectMapper objectMapper,
@@ -42,6 +49,18 @@ public class MyAnimeListService
 		this.httpRequestService = httpRequestService;
 		this.objectMapper = objectMapper;
 		this.fileSystemService = fileSystemService;
+	}
+
+	private boolean isBackedOff()
+	{
+		if (backoffUntil == null)
+			return false;
+		if (Instant.now().isAfter(backoffUntil))
+		{
+			backoffUntil = null;
+			return false;
+		}
+		return true;
 	}
 
 	public void getMetaForLibrary(Library library)
@@ -81,6 +100,12 @@ public class MyAnimeListService
 	{
 		List<MetadataResult> results = new ArrayList<>();
 
+		if (isBackedOff())
+		{
+			logger.debug("Jikan API is temporarily unavailable, skipping search");
+			return results;
+		}
+
 		try
 		{
 			URI uri = UriComponentsBuilder.fromUriString(BASE_URL + "/manga")
@@ -100,6 +125,16 @@ public class MyAnimeListService
 				return results;
 
 			JsonNode root = objectMapper.readTree(response);
+
+			// Jikan wraps errors in a "status" field
+			int status = root.path("status").asInt(0);
+			if (status == 504 || status == 503)
+			{
+				backoffUntil = Instant.now().plusSeconds(BACKOFF_DURATION_MINUTES * 60);
+				logger.warn("Jikan API returned {}. Backing off for {} minutes.", status, BACKOFF_DURATION_MINUTES);
+				return results;
+			}
+
 			JsonNode data = root.path("data");
 			if (!data.isArray())
 				return results;
@@ -140,6 +175,18 @@ public class MyAnimeListService
 				}
 
 				results.add(result);
+			}
+		}
+		catch (HttpServerErrorException e)
+		{
+			if (e.getStatusCode().value() == 504 || e.getStatusCode().value() == 503)
+			{
+				backoffUntil = Instant.now().plusSeconds(BACKOFF_DURATION_MINUTES * 60);
+				logger.warn("Jikan API returned HTTP {}. Backing off for {} minutes.", e.getStatusCode().value(), BACKOFF_DURATION_MINUTES);
+			}
+			else
+			{
+				logger.error("MyAnimeList (Jikan) search failed for '{}': {}", query, e.getMessage());
 			}
 		}
 		catch (Exception e)
