@@ -18,7 +18,7 @@ One stop solution to all your literature needs.
 ./mvnw spring-boot:run
 ```
 
-The app starts on port `3500` by default: http://localhost:3500
+The app starts on port `3800` by default: http://localhost:3800
 
 ## Building
 
@@ -33,7 +33,7 @@ This produces a runnable jar at `target/litrarr-0.0.1-SNAPSHOT.jar`.
 ### Docker command
 
 ```
-docker run -p 3500:3500 ghcr.io/devmalik19/litrarr:latest
+docker run -p 3800:3800 ghcr.io/devmalik19/litrarr:latest
 ```
 
 ### Docker compose
@@ -44,13 +44,13 @@ services:
     litrarr:
         image: ghcr.io/devmalik19/litrarr:latest
         ports:
-            - "3500:3500"
+            - "3800:3800"
         volumes:
             - /path/to/config:/config 
             - /path/to/library:/library #optional
             - /path/to/download-client-downloads:/downloads #optional
         environment:
-            # - PORT=3500  # Optional, if you want to change the port.
+            # - PORT=3800  # Optional, if you want to change the port.
             # - BASE_URL=/litrarr  # Optional, if you want to run the app under subfolder like domain.com/litrarr (useful for reverse proxy)
             # - USER=user # Optional, if you want to change the default username.
             # - PASSWORD=XXXXXX  # Optional, if you want to change the default password.

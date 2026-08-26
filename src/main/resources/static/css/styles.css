@@ -64,13 +64,13 @@ footer
 /* Links and buttons */
 a
 {
-	color: var(--text-color);
+	color: var(--sub-color);
 	text-decoration: none;
 }
 
 a:hover, a:focus
 {
-	color: var(--text-color);
+	color: var(--hover-color);
 }
 
 .hide
@@ -101,11 +101,13 @@ thead tr
 tbody tr:hover
 {
     background-color: var(--hover-color);
+    color: var(--text-color);
 }
 
 tbody tr:nth-child(odd)
 {
     background-color: var(--sub-color);
+    color: var(--text-color);
 }
 
 td:nth-child(5),
@@ -211,6 +213,7 @@ form
           margin-bottom: 15px;
           padding: 10px 0;
           background-color: var(--sub-color); /* Matches your odd-row color */
+          color: var(--text-color);
           border-radius: 8px; /* Optional: makes cards look nicer */
           box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       }

@@ -2,6 +2,7 @@ package devmalik19.litrarr.service.metadata;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import devmalik19.litrarr.constants.Constants;
 import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
@@ -101,7 +102,7 @@ public class ComicVineService
 
 			Map<String, String> headers = new HashMap<>();
 			headers.put("Accept", "application/json");
-			headers.put("User-Agent", "Litrarr/1.0");
+			headers.put("User-Agent", Constants.USER_AGENT);
 
 			String response = httpRequestService.doGetRequest(uri, headers);
 			if (!StringUtils.hasText(response))

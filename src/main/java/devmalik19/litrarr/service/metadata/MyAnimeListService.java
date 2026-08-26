@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import devmalik19.litrarr.constants.Constants;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -92,6 +93,7 @@ public class MyAnimeListService
 
 			Map<String, String> headers = new HashMap<>();
 			headers.put("Accept", "application/json");
+			headers.put("User-Agent", Constants.USER_AGENT);
 
 			String response = httpRequestService.doGetRequest(uri, headers);
 			if (!StringUtils.hasText(response))

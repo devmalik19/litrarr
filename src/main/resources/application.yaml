@@ -1,7 +1,7 @@
 server:
     servlet:
         context-path: ${BASE_URL:/}
-    port: ${PORT:3500}
+    port: ${PORT:3800}
 
 spring:
     application:
