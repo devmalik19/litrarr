@@ -112,7 +112,10 @@ public class ProwlarrService
 			UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(url);
 			uriBuilder.queryParam("query", searchTerm);
 			uriBuilder.queryParam("type", "search");
-			uriBuilder.queryParam("categories", Constants.SEARCH_CATEGORY);
+			for (String category : Constants.SEARCH_CATEGORY.split(","))
+			{
+				uriBuilder.queryParam("categories", category.trim());
+			}
 			uriBuilder.queryParam("indexerIds", indexerIds);
 			uriBuilder.queryParam("limit", Constants.QUERY_LIMIT);
 			uriBuilder.queryParam("offset", 0);
