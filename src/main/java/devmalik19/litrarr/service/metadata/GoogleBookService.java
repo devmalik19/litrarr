@@ -13,12 +13,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import devmalik19.litrarr.constants.Constants;
 import java.net.URI;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,9 +35,6 @@ public class GoogleBookService
 	@Value("${app.api-keys.google-books:}")
 	private String apiKey;
 
-	/** Tracks when the daily quota was exhausted — resets the next day. */
-	private volatile LocalDate quotaExhaustedDate = null;
-
 	public GoogleBookService(HttpRequestService httpRequestService,
 							 ObjectMapper objectMapper,
 							 FileSystemService fileSystemService)
@@ -49,20 +44,11 @@ public class GoogleBookService
 		this.fileSystemService = fileSystemService;
 	}
 
-	private boolean isQuotaExhausted()
-	{
-		if (quotaExhaustedDate == null)
-			return false;
-		if (LocalDate.now().isAfter(quotaExhaustedDate))
-		{
-			quotaExhaustedDate = null; // reset for the new day
-			return false;
-		}
-		return true;
-	}
-
 	public void getMetaForLibrary(Library library)
 	{
+		if (!isEnabled())
+			return;
+
 		try
 		{
 			String query = library.getName();
@@ -101,25 +87,21 @@ public class GoogleBookService
 	{
 		List<MetadataResult> results = new ArrayList<>();
 
-		if (isQuotaExhausted())
+		if (!isEnabled())
 		{
-			logger.debug("Google Books daily quota exhausted, skipping search");
+			logger.debug("Google Books API key not configured, skipping search");
 			return results;
 		}
 
-		String apiKey = getApiKey();
-
 		try
 		{
-			UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(BASE_URL)
+			URI uri = UriComponentsBuilder.fromUriString(BASE_URL)
 				.queryParam("q", query)
 				.queryParam("maxResults", 10)
-				.queryParam("printType", "books");
-
-			if (StringUtils.hasText(apiKey))
-				uriBuilder.queryParam("key", apiKey);
-
-			URI uri = uriBuilder.build().toUri();
+				.queryParam("printType", "books")
+				.queryParam("key", apiKey)
+				.build()
+				.toUri();
 
 			Map<String, String> headers = new HashMap<>();
 			headers.put("Accept", "application/json");
@@ -130,20 +112,6 @@ public class GoogleBookService
 				return results;
 
 			JsonNode root = objectMapper.readTree(response);
-
-			// Check for quota error in response body
-			JsonNode error = root.path("error");
-			if (!error.isMissingNode())
-			{
-				int code = error.path("code").asInt(0);
-				if (code == 429)
-				{
-					quotaExhaustedDate = LocalDate.now();
-					logger.warn("Google Books daily quota exhausted. Skipping until tomorrow.");
-					return results;
-				}
-			}
-
 			int totalItems = root.path("totalItems").asInt(0);
 			if (totalItems == 0)
 				return results;
@@ -179,18 +147,6 @@ public class GoogleBookService
 				results.add(result);
 			}
 		}
-		catch (HttpClientErrorException e)
-		{
-			if (e.getStatusCode().value() == 429)
-			{
-				quotaExhaustedDate = LocalDate.now();
-				logger.warn("Google Books daily quota exhausted (HTTP 429). Skipping until tomorrow.");
-			}
-			else
-			{
-				logger.error("Google Books search failed for '{}': {}", query, e.getMessage());
-			}
-		}
 		catch (Exception e)
 		{
 			logger.error("Google Books search failed for '{}': {}", query, e.getMessage());
@@ -199,8 +155,8 @@ public class GoogleBookService
 		return results;
 	}
 
-	private String getApiKey()
+	private boolean isEnabled()
 	{
-		return StringUtils.hasText(apiKey) ? apiKey : null;
+		return StringUtils.hasText(apiKey);
 	}
 }

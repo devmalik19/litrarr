@@ -56,6 +56,7 @@ services:
             # - PASSWORD=XXXXXX  # Optional, if you want to change the default password.
             # - GOOGLE_BOOKS_API_KEY=your-key # Optional, Google Books API key for metadata search
             # - COMIC_VINE_API_KEY=your-key # Optional, ComicVine API key for comic metadata search
+            # - MYANIMELIST_API_KEY=your-key # Optional, MyAnimeList Client ID for manga metadata (falls back to Jikan if not set)
             # - LOGGING_LEVEL=DEBUG  # Optional
         restart: unless-stopped
 ```

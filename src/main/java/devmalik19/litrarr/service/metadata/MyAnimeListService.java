@@ -9,38 +9,35 @@ import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import devmalik19.litrarr.constants.Constants;
 import java.net.URI;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Fetches manga metadata from the Jikan API (public MyAnimeList proxy).
- * No API key required — Jikan is rate-limited to ~3 requests/second.
- * Temporarily backs off when Jikan returns 504 (upstream failure).
+ * Fetches manga metadata from the official MyAnimeList API.
+ * Requires a MAL Client ID to be configured, otherwise all requests are skipped.
  */
 @Service
 public class MyAnimeListService
 {
 	private static final Logger logger = LoggerFactory.getLogger(MyAnimeListService.class);
-	private static final String BASE_URL = "https://api.jikan.moe/v4";
-	private static final long BACKOFF_DURATION_MINUTES = 30;
+	private static final String MAL_BASE_URL = "https://api.myanimelist.net/v2";
 
 	private final HttpRequestService httpRequestService;
 	private final ObjectMapper objectMapper;
 	private final FileSystemService fileSystemService;
 
-	/** When Jikan is down, skip requests until this time. */
-	private volatile Instant backoffUntil = null;
+	@Value("${app.api-keys.mal-client-id:}")
+	private String malClientId;
 
 	public MyAnimeListService(HttpRequestService httpRequestService,
 							  ObjectMapper objectMapper,
@@ -51,20 +48,16 @@ public class MyAnimeListService
 		this.fileSystemService = fileSystemService;
 	}
 
-	private boolean isBackedOff()
+	private boolean isEnabled()
 	{
-		if (backoffUntil == null)
-			return false;
-		if (Instant.now().isAfter(backoffUntil))
-		{
-			backoffUntil = null;
-			return false;
-		}
-		return true;
+		return StringUtils.hasText(malClientId);
 	}
 
 	public void getMetaForLibrary(Library library)
 	{
+		if (!isEnabled())
+			return;
+
 		try
 		{
 			String query = library.getName();
@@ -100,23 +93,23 @@ public class MyAnimeListService
 	{
 		List<MetadataResult> results = new ArrayList<>();
 
-		if (isBackedOff())
+		if (!isEnabled())
 		{
-			logger.debug("Jikan API is temporarily unavailable, skipping search");
+			logger.debug("MyAnimeList API key not configured, skipping search");
 			return results;
 		}
 
 		try
 		{
-			URI uri = UriComponentsBuilder.fromUriString(BASE_URL + "/manga")
+			URI uri = UriComponentsBuilder.fromUriString(MAL_BASE_URL + "/manga")
 				.queryParam("q", query)
 				.queryParam("limit", 10)
-				.queryParam("order_by", "scored_by")
-				.queryParam("sort", "desc")
+				.queryParam("fields", "id,title,alternative_titles,authors{first_name,last_name},start_date,main_picture")
 				.build()
 				.toUri();
 
 			Map<String, String> headers = new HashMap<>();
+			headers.put("X-MAL-CLIENT-ID", malClientId);
 			headers.put("Accept", "application/json");
 			headers.put("User-Agent", Constants.USER_AGENT);
 
@@ -125,73 +118,54 @@ public class MyAnimeListService
 				return results;
 
 			JsonNode root = objectMapper.readTree(response);
-
-			// Jikan wraps errors in a "status" field
-			int status = root.path("status").asInt(0);
-			if (status == 504 || status == 503)
-			{
-				backoffUntil = Instant.now().plusSeconds(BACKOFF_DURATION_MINUTES * 60);
-				logger.warn("Jikan API returned {}. Backing off for {} minutes.", status, BACKOFF_DURATION_MINUTES);
-				return results;
-			}
-
 			JsonNode data = root.path("data");
 			if (!data.isArray())
 				return results;
 
-			for (JsonNode item : data)
+			for (JsonNode node : data)
 			{
+				JsonNode manga = node.path("node");
 				MetadataResult result = new MetadataResult();
 
-				// Prefer English title, fall back to default title
-				String title = item.path("title_english").asText(null);
+				// Title: prefer English alternative, fall back to default
+				String title = manga.path("alternative_titles").path("en").asText(null);
 				if (!StringUtils.hasText(title))
-					title = item.path("title").asText(null);
+					title = manga.path("title").asText(null);
 				result.setTitle(title);
 
-				// Extract the first author from the list
-				JsonNode authors = item.path("authors");
+				// Author
+				JsonNode authors = manga.path("authors");
 				if (authors.isArray() && !authors.isEmpty())
 				{
-					String authorName = authors.get(0).path("name").asText(null);
+					JsonNode firstAuthor = authors.get(0).path("node");
+					String firstName = firstAuthor.path("first_name").asText("");
+					String lastName = firstAuthor.path("last_name").asText("");
+					String authorName = (firstName + " " + lastName).trim();
 					if (StringUtils.hasText(authorName))
 						result.setAuthor(authorName);
 				}
 
-				// Extract year from published.from (ISO date string)
-				JsonNode published = item.path("published");
-				String from = published.path("from").asText(null);
-				if (StringUtils.hasText(from) && from.length() >= 4)
-					result.setYear(from.substring(0, 4));
+				// Year from start_date (format: "YYYY-MM-DD" or "YYYY")
+				String startDate = manga.path("start_date").asText(null);
+				if (StringUtils.hasText(startDate) && startDate.length() >= 4)
+					result.setYear(startDate.substring(0, 4));
 
-				// Extract cover image
-				JsonNode images = item.path("images").path("jpg");
-				if (!images.isMissingNode())
+				// Cover image
+				JsonNode mainPicture = manga.path("main_picture");
+				if (!mainPicture.isMissingNode())
 				{
-					String imageUrl = images.path("large_image_url").asText(null);
+					String imageUrl = mainPicture.path("large").asText(null);
 					if (!StringUtils.hasText(imageUrl))
-						imageUrl = images.path("image_url").asText(null);
+						imageUrl = mainPicture.path("medium").asText(null);
 					result.setImageUrl(imageUrl);
 				}
 
 				results.add(result);
 			}
 		}
-		catch (HttpServerErrorException e)
-		{
-			if (e.getStatusCode().value() == 504 || e.getStatusCode().value() == 503)
-			{
-				backoffUntil = Instant.now().plusSeconds(BACKOFF_DURATION_MINUTES * 60);
-				logger.warn("Jikan API returned HTTP {}. Backing off for {} minutes.", e.getStatusCode().value(), BACKOFF_DURATION_MINUTES);
-			}
-			else
-			{
-				logger.error("MyAnimeList (Jikan) search failed for '{}': {}", query, e.getMessage());
-			}
-		}
 		catch (Exception e)
 		{
-			logger.error("MyAnimeList (Jikan) search failed for '{}': {}", query, e.getMessage());
+			logger.error("MyAnimeList search failed for '{}': {}", query, e.getMessage());
 		}
 
 		return results;

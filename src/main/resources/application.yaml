@@ -33,4 +33,5 @@ app:
     api-keys:
         google-books: ${GOOGLE_BOOKS_API_KEY:}
         comic-vine: ${COMIC_VINE_API_KEY:}
+        mal-client-id: ${MYANIMELIST_API_KEY:}
 
