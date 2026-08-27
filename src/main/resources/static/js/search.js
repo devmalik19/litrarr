@@ -139,3 +139,15 @@ async function deleteSearch(id)
 		window.location.href = `delete?id=${id}`;
 	}
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+	const inputs = document.querySelectorAll('#title, #author, #publisher');
+	inputs.forEach(function(input) {
+		input.addEventListener('keydown', function(event) {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				document.getElementById('metadataSearchBtn').click();
+			}
+		});
+	});
+});

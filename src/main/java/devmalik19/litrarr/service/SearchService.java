@@ -80,6 +80,7 @@ public class SearchService
 		search.setTitle(metadataResult.getTitle());
 		search.setAuthor(metadataResult.getAuthor());
 		search.setYear(metadataResult.getYear());
+		search.setCategory(metadataResult.getCategory());
 		search.setStatus(SearchStatus.NEW);
 
 		if (metadataResult.getLibrary() != null)

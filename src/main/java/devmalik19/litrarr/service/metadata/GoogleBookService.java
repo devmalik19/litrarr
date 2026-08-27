@@ -128,6 +128,10 @@ public class GoogleBookService
 				if (authors.isArray() && !authors.isEmpty())
 					result.setAuthor(authors.get(0).asText(null));
 
+				String publisher = volumeInfo.path("publisher").asText(null);
+				if (StringUtils.hasText(publisher))
+					result.setPublisher(publisher);
+
 				String publishedDate = volumeInfo.path("publishedDate").asText("");
 				if (publishedDate.length() >= 4)
 					result.setYear(publishedDate.substring(0, 4));

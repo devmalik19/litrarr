@@ -9,7 +9,6 @@
 					<tr>
 						<th>Title</th>
 						<th>Author</th>
-						<th>Issue</th>
 						<th>Year</th>
 						<th>Status</th>
 						<th>Category</th>
@@ -20,7 +19,6 @@
 					<tr th:each="result: ${history}">
 						<td th:text="${result.title}"></td>
 						<td th:text="${result.author}"></td>
-						<td th:text="${result.issue}"></td>
 						<td th:text="${result.year}"></td>
 						<td th:text="${result.status}"></td>
 						<td th:text="${result.category}"></td>

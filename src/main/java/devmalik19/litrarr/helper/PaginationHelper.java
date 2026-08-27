@@ -47,7 +47,7 @@ public class PaginationHelper
 
 		if (page.hasContent() && page.getContent().get(0) instanceof MetadataResult)
 		{
-			headers = List.of("title", "author", "year");
+			headers = List.of("title", "author", "publisher", "year");
 			model.addAttribute("endpoint", "home/search");
 		}
 		else if (page.hasContent() && page.getContent().get(0) instanceof SearchResult)
@@ -148,6 +148,9 @@ public class PaginationHelper
 				break;
 			case "author":
 				comparator = Comparator.comparing(MetadataResult::getAuthor, Comparator.nullsLast(String::compareTo));
+				break;
+			case "publisher":
+				comparator = Comparator.comparing(MetadataResult::getPublisher, Comparator.nullsLast(String::compareTo));
 				break;
 			case "year":
 				comparator = Comparator.comparing(MetadataResult::getYear, Comparator.nullsLast(String::compareTo));
