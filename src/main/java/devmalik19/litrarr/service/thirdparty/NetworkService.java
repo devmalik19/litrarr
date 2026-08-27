@@ -93,8 +93,7 @@ public class NetworkService
 		logger.info("{} results found from prowlarr for {}", results.length, query);
 
 		Comparator<SearchResult> comparator = Comparator
-			.comparingInt(SearchResult::getSeeders).reversed()
-			.thenComparingInt(SearchResult::getLeechers).reversed();
+			.<SearchResult>comparingInt(r -> r.getSeeders() + r.getLeechers()).reversed();
 
 		HashMap<String, Integer> priority = PriorityHelper.getPriority();
 		if(priority.getOrDefault(Protocol.TORRENT.name(), 0)<priority.getOrDefault(Protocol.USENET.name(), 0))
