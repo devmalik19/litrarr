@@ -7,6 +7,7 @@ import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.LibraryFilter;
 import devmalik19.litrarr.helper.SortingHelper;
+import devmalik19.litrarr.helper.StringHelper;
 import devmalik19.litrarr.repository.ItemRepository;
 import devmalik19.litrarr.repository.LibraryFilterRepository;
 import devmalik19.litrarr.repository.LibraryRepository;
@@ -159,14 +160,25 @@ public class LibraryService
 				if(!FileTypes.isMatch(extension))
 					return;
 
-				Item item = itemRepository.findByPath(path.toString()).orElse(new Item());
+				Library parentLibrary = (parentPath != null && savedDirectories.containsKey(parentPath))
+					? savedDirectories.get(parentPath) : null;
+
+				// For COMICS/MANGA, try to match against existing metadata-created items
+				Item item = itemRepository.findByPath(path.toString()).orElse(null);
+				if (item == null && parentLibrary != null
+					&& (category == Category.COMICS || category == Category.MANGA))
+				{
+					item = findMatchingMetadataItem(parentLibrary, path);
+				}
+				if (item == null)
+					item = new Item();
+
 				item.setName(path.getFileName().toString());
 				item.setPath(path.toString());
+				item.setMissing(false);
 
-				if (parentPath != null && savedDirectories.containsKey(parentPath))
-				{
-					item.setLibrary(savedDirectories.get(parentPath));
-				}
+				if (parentLibrary != null)
+					item.setLibrary(parentLibrary);
 
 				item = itemRepository.save(item);
 				metaDataService.getMetaForItem(item);
@@ -184,6 +196,30 @@ public class LibraryService
 				return fileSystem.getPathMatcher("glob:" + filter.getPath() + "{,/**}");
 			})
 			.toList();
+	}
+
+	/**
+	 * Tries to find an existing metadata-created Item (missing, no path) in the given library
+	 * that matches the scanned file by comparing issue/volume numbers in the filename.
+	 */
+	private Item findMatchingMetadataItem(Library library, Path filePath)
+	{
+		String fileName = filePath.getFileName().toString().toLowerCase();
+		List<Item> metadataItems = itemRepository.findByLibraryAndMissingTrue(library);
+
+		for (Item metadataItem : metadataItems)
+		{
+			if (metadataItem.getPath() != null)
+				continue;
+
+			String itemName = metadataItem.getName().toLowerCase();
+			String itemNumber = StringHelper.extractNumber(itemName);
+			String fileNumber = StringHelper.extractNumber(fileName);
+
+			if (itemNumber != null && itemNumber.equals(fileNumber))
+				return metadataItem;
+		}
+		return null;
 	}
 
 	public  List<Library> getLibrary(FolderType type, Category category, String sort, String search)

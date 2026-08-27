@@ -245,6 +245,30 @@ input:checked + .slider:before
     text-overflow: ellipsis; /* Truncates long movie names */
 }
 
+.poster-missing
+{
+    border: 2px solid #f87171;
+    opacity: 0.7;
+}
+
+.poster-missing .poster-image
+{
+    filter: grayscale(0.5);
+}
+
+.missing-badge
+{
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #fff;
+    background-color: #dc2626;
+    border-radius: 4px;
+}
+
 @media screen and (max-width:768px)
 {
 	h2

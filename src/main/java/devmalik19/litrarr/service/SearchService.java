@@ -1,5 +1,6 @@
 package devmalik19.litrarr.service;
 
+import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.constants.SearchStatus;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.Search;
@@ -10,6 +11,7 @@ import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.helper.PriorityHelper;
 import devmalik19.litrarr.repository.LibraryRepository;
 import devmalik19.litrarr.repository.SearchRepository;
+import devmalik19.litrarr.service.metadata.MetaDataService;
 import devmalik19.litrarr.service.plugins.PluginsService;
 import devmalik19.litrarr.service.thirdparty.NetworkService;
 
@@ -33,6 +35,7 @@ public class SearchService
 	private final DownloadService downloadService;
 	private final SearchRepository searchRepository;
 	private final LibraryRepository libraryRepository;
+	private final MetaDataService metaDataService;
 
 	private static List<Entry<String, Integer>> sortedServices;
 
@@ -40,13 +43,15 @@ public class SearchService
 						 PluginsService pluginsService,
 						 DownloadService downloadService,
 						 SearchRepository searchRepository,
-						 LibraryRepository libraryRepository)
+						 LibraryRepository libraryRepository,
+						 MetaDataService metaDataService)
 	{
 		this.networkService = networkService;
 		this.pluginsService = pluginsService;
 		this.downloadService = downloadService;
 		this.searchRepository = searchRepository;
 		this.libraryRepository = libraryRepository;
+		this.metaDataService = metaDataService;
 	}
 
 	public void setPriorityOrder()
@@ -84,6 +89,13 @@ public class SearchService
 				search.setLibrary(lib);
 				search.setCategory(lib.getCategory());
 			});
+		}
+
+		// For comics/manga, save issues from metadata when user initiates download
+		if (metadataResult.getCategory() != null
+			&& (metadataResult.getCategory() == Category.COMICS || metadataResult.getCategory() == Category.MANGA))
+		{
+			metaDataService.saveIssuesFromSearch(metadataResult);
 		}
 
 		Search saved = searchRepository.save(search);

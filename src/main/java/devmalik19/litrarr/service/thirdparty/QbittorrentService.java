@@ -61,6 +61,13 @@ public class QbittorrentService
 			headers.put("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
 			String body = String.format("urls=%s&category=%s", url, connectionSettings.getCategory());
 			String response = httpRequestService.doPostRequest(String.format("%s/api/v2/torrents/add", connectionSettings.getUrl()), body, headers);
+
+			if ("Fails.".equalsIgnoreCase(response) || response == null || response.isBlank())
+			{
+				logger.error("qBittorrent rejected the torrent URL: {}", url);
+				return downloadState; // returns empty state → treated as not found
+			}
+
 			downloadState.setDownloadPath(connectionSettings.getCategory());
 			downloadState.setService(NetworkService.QBITTORRENT);
 			logger.info("Download enqueued for {} {}", body, response);
@@ -78,9 +85,17 @@ public class QbittorrentService
 				connectionSettings.getUrl(), connectionSettings.getCategory());
 
 			String responseJson = httpRequestService.doGetRequest(url, headers);
+			if (responseJson == null || responseJson.isBlank())
+			{
+				logger.warn("Empty response from qBittorrent when checking downloads");
+				return;
+			}
+
 			List<Map<String, Object>> torrents = objectMapper.readValue(responseJson, new TypeReference<List<Map<String, Object>>>() {});
 
 			DownloadState downloadState = search.getData();
+			boolean found = false;
+
 			for (Map<String, Object> torrent : torrents)
 			{
 				String name = (String) torrent.get("name");
@@ -89,6 +104,7 @@ public class QbittorrentService
 
 				if (name != null && name.equalsIgnoreCase(downloadState.getIdentifier()))
 				{
+					found = true;
 					if (progress >= 1.0)
 					{
 						logger.info("Torrent '{}' is COMPLETE.", name);
@@ -101,6 +117,12 @@ public class QbittorrentService
 					}
 					break;
 				}
+			}
+
+			if (!found)
+			{
+				logger.warn("Torrent '{}' not found in qBittorrent. Marking as FAILED.", downloadState.getIdentifier());
+				search.setStatus(SearchStatus.FAILED);
 			}
 		}
 	}

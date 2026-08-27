@@ -2,9 +2,12 @@ package devmalik19.litrarr.service.metadata;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
+import devmalik19.litrarr.helper.HttpHelper;
+import devmalik19.litrarr.helper.StringHelper;
 import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
@@ -15,10 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import devmalik19.litrarr.constants.Constants;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +68,7 @@ public class MyAnimeListService
 			{
 				MetadataResult first = results.get(0);
 				if (StringUtils.hasText(first.getAuthor()))
-					library.setCreator(first.getAuthor());
+					library.setAuthor(first.getAuthor());
 
 				if (StringUtils.hasText(first.getImageUrl()))
 				{
@@ -88,6 +90,67 @@ public class MyAnimeListService
 		// Item-level metadata enrichment can be added later
 	}
 
+	/**
+	 * Fetches volume information for a manga from MAL and creates Item entries for each volume.
+	 * MAL doesn't expose individual chapters/volumes as separate API resources,
+	 * so we generate Items based on the num_volumes reported by the manga detail endpoint.
+	 */
+	public List<Item> getVolumesForManga(String mangaId, Library parentLibrary)
+	{
+		List<Item> volumes = new ArrayList<>();
+
+		if (!isEnabled() || !StringUtils.hasText(mangaId))
+			return volumes;
+
+		try
+		{
+			URI uri = UriComponentsBuilder.fromUriString(MAL_BASE_URL + "/manga/" + mangaId)
+				.queryParam("fields", "num_volumes,start_date")
+				.build()
+				.toUri();
+
+			Map<String, String> headers = HttpHelper.jsonApiHeaders("X-MAL-CLIENT-ID", malClientId);
+
+			String response = httpRequestService.doGetRequest(uri, headers);
+			if (!StringUtils.hasText(response))
+				return volumes;
+
+			JsonNode root = objectMapper.readTree(response);
+			int numVolumes = root.path("num_volumes").asInt(0);
+
+			if (numVolumes <= 0)
+			{
+				logger.debug("MAL manga {} has no volume count, skipping issue creation", mangaId);
+				return volumes;
+			}
+
+			// Parse start_date for the first volume's releaseOn
+			LocalDate startDate = StringHelper.parseDate(root.path("start_date").asText(null));
+
+			for (int i = 1; i <= numVolumes; i++)
+			{
+				Item item = new Item();
+				item.setName("Volume " + i);
+				item.setGuid(mangaId + "-vol-" + i);
+				item.setType(Category.MANGA);
+				item.setLibrary(parentLibrary);
+				item.setMissing(true);
+
+				// Only set releaseOn for volume 1 based on the series start date
+				if (i == 1 && startDate != null)
+					item.setReleaseOn(startDate);
+
+				volumes.add(item);
+			}
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to fetch volumes for MAL manga {}: {}", mangaId, e.getMessage());
+		}
+
+		return volumes;
+	}
+
 	@Cacheable("MyAnimeListMetadata")
 	public List<MetadataResult> search(String query)
 	{
@@ -104,14 +167,11 @@ public class MyAnimeListService
 			URI uri = UriComponentsBuilder.fromUriString(MAL_BASE_URL + "/manga")
 				.queryParam("q", query)
 				.queryParam("limit", 10)
-				.queryParam("fields", "id,title,alternative_titles,authors{first_name,last_name},start_date,main_picture")
+				.queryParam("fields", "id,title,alternative_titles,authors{first_name,last_name},start_date,num_volumes,main_picture")
 				.build()
 				.toUri();
 
-			Map<String, String> headers = new HashMap<>();
-			headers.put("X-MAL-CLIENT-ID", malClientId);
-			headers.put("Accept", "application/json");
-			headers.put("User-Agent", Constants.USER_AGENT);
+			Map<String, String> headers = HttpHelper.jsonApiHeaders("X-MAL-CLIENT-ID", malClientId);
 
 			String response = httpRequestService.doGetRequest(uri, headers);
 			if (!StringUtils.hasText(response))
@@ -126,6 +186,12 @@ public class MyAnimeListService
 			{
 				JsonNode manga = node.path("node");
 				MetadataResult result = new MetadataResult();
+				result.setCategory(Category.MANGA);
+
+				// Capture MAL manga ID as sourceId
+				String malId = manga.path("id").asText(null);
+				if (StringUtils.hasText(malId))
+					result.setSourceId(malId);
 
 				// Title: prefer English alternative, fall back to default
 				String title = manga.path("alternative_titles").path("en").asText(null);

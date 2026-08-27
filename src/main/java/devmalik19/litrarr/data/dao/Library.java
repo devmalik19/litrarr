@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import java.time.LocalDate;
 import java.util.List;
 
 import lombok.Getter;
@@ -29,10 +30,13 @@ public class Library
 	private Category category;
 	private String path;
 	private String image;
-	private String creator;
+	private String author;
+	private String publisher;
 
 	@Column(nullable = false)
 	private boolean metadataFetched = false;
+
+	private LocalDate releaseOn;
 
 	@ManyToOne
 	@JoinColumn(name = "parent")

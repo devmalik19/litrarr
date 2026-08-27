@@ -48,6 +48,22 @@ public class SabnzbdService
 		{
 			String response = httpRequestService.doGetRequest(String.format("%s/api?mode=addurl&output=json&apikey=%s&cat=%s&name=%s",
 				connectionSettings.getUrl(), connectionSettings.getApiKey(), connectionSettings.getCategory(), url));
+
+			if (response == null || response.isBlank())
+			{
+				logger.error("SABnzbd returned empty response when adding NZB: {}", url);
+				return downloadState;
+			}
+
+			JsonNode root = objectMapper.readTree(response);
+			boolean status = root.path("status").asBoolean(false);
+			if (!status)
+			{
+				String error = root.path("error").asText("Unknown error");
+				logger.error("SABnzbd rejected the NZB URL '{}': {}", url, error);
+				return downloadState; // returns empty state → treated as not found
+			}
+
 			downloadState.setDownloadPath(connectionSettings.getCategory());
 			downloadState.setService(NetworkService.SABNZBD);
 			logger.info("Download enqueued for {} {}", url, response);
@@ -63,10 +79,18 @@ public class SabnzbdService
 			String response = httpRequestService.doGetRequest(String.format("%s/api?mode=history&output=json&apikey=%s",
 				connectionSettings.getUrl(), connectionSettings.getApiKey()));
 
+			if (response == null || response.isBlank())
+			{
+				logger.warn("Empty response from SABnzbd when checking downloads");
+				return;
+			}
+
 			JsonNode root = objectMapper.readTree(response);
 			JsonNode slots = root.path("history").path("slots");
 
 			DownloadState downloadState = search.getData();
+			boolean found = false;
+
 			if (slots.isArray())
 			{
 				for (JsonNode slot : slots)
@@ -76,6 +100,7 @@ public class SabnzbdService
 
 					if (nzbName.equalsIgnoreCase(downloadState.getIdentifier()))
 					{
+						found = true;
 						if ("Completed".equalsIgnoreCase(status))
 						{
 							logger.info("Download for '{}' is COMPLETE.", nzbName);
@@ -90,6 +115,38 @@ public class SabnzbdService
 					}
 				}
 			}
+
+			if (!found)
+			{
+				// Also check the active queue before marking as failed
+				String queueResponse = httpRequestService.doGetRequest(String.format("%s/api?mode=queue&output=json&apikey=%s",
+					connectionSettings.getUrl(), connectionSettings.getApiKey()));
+
+				if (queueResponse != null && !queueResponse.isBlank())
+				{
+					JsonNode queueRoot = objectMapper.readTree(queueResponse);
+					JsonNode queueSlots = queueRoot.path("queue").path("slots");
+					if (queueSlots.isArray())
+					{
+						for (JsonNode slot : queueSlots)
+						{
+							String filename = slot.path("filename").asText();
+							if (filename.equalsIgnoreCase(downloadState.getIdentifier()))
+							{
+								found = true;
+								break;
+							}
+						}
+					}
+				}
+
+				if (!found)
+				{
+					logger.warn("NZB '{}' not found in SABnzbd history or queue. Marking as FAILED.", downloadState.getIdentifier());
+					search.setStatus(SearchStatus.FAILED);
+				}
+			}
+
 			logger.info("Download status check {}", response);
 		}
 	}

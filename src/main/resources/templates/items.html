@@ -33,10 +33,11 @@
 			</div>
 
 			<div class="poster-grid">
-				<div class="poster" th:each="item: ${items}">
+				<div class="poster" th:each="item: ${items}" th:classappend="${item.missing} ? ' poster-missing' : ''">
 					<div class="poster-image" th:style="'background-image: url(' + @{/images/default.png} + ');'"></div>
 					<div class="poster-details">
-						<span class="poster-title"  th:text="'📄 ' + ${item.name}">File Name</span>
+						<span class="poster-title" th:text="'📄 ' + ${item.name}">File Name</span>
+						<span class="poster-badge missing-badge" th:if="${item.missing}">Missing</span>
 					</div>
 				</div>
 			</div>

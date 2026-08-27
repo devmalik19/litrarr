@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
+import devmalik19.litrarr.helper.HttpHelper;
 import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
@@ -15,10 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import devmalik19.litrarr.constants.Constants;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,15 +51,15 @@ public class GoogleBookService
 		try
 		{
 			String query = library.getName();
-			if (StringUtils.hasText(library.getCreator()))
-				query = library.getCreator() + " " + query;
+			if (StringUtils.hasText(library.getAuthor()))
+				query = library.getAuthor() + " " + query;
 
 			List<MetadataResult> results = search(query);
 			if (!results.isEmpty())
 			{
 				MetadataResult first = results.get(0);
 				if (StringUtils.hasText(first.getAuthor()))
-					library.setCreator(first.getAuthor());
+					library.setAuthor(first.getAuthor());
 
 				if (StringUtils.hasText(first.getImageUrl()))
 				{
@@ -103,9 +102,7 @@ public class GoogleBookService
 				.build()
 				.toUri();
 
-			Map<String, String> headers = new HashMap<>();
-			headers.put("Accept", "application/json");
-			headers.put("User-Agent", Constants.USER_AGENT);
+			Map<String, String> headers = HttpHelper.jsonApiHeaders();
 
 			String response = httpRequestService.doGetRequest(uri, headers);
 			if (!StringUtils.hasText(response))
