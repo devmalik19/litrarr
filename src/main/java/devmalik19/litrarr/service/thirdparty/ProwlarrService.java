@@ -116,7 +116,7 @@ public class ProwlarrService
 			{
 				uriBuilder.queryParam("categories", category.trim());
 			}
-			uriBuilder.queryParam("indexerIds", indexerIds);
+			uriBuilder.queryParam("indexerIds", indexerIds.toArray());
 			uriBuilder.queryParam("limit", Constants.QUERY_LIMIT);
 			uriBuilder.queryParam("offset", 0);
 
