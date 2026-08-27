@@ -18,7 +18,6 @@ public class StringHelper
 	{
 		if (text == null)
 			return null;
-
 		Matcher matcher = NUMBER_PATTERN.matcher(text);
 		if (matcher.find())
 			return String.valueOf(Integer.parseInt(matcher.group()));
@@ -33,7 +32,6 @@ public class StringHelper
 	{
 		if (dateStr == null || dateStr.isBlank())
 			return null;
-
 		try
 		{
 			if (dateStr.length() == 10) // YYYY-MM-DD
@@ -46,5 +44,19 @@ public class StringHelper
 			// unparseable, return null
 		}
 		return null;
+	}
+
+	public static String buildQuery(String... parts)
+	{
+		StringBuilder sb = new StringBuilder();
+		for (String part : parts)
+		{
+			if (part != null && !part.isBlank())
+			{
+				if (!sb.isEmpty()) sb.append(" ");
+				sb.append(part);
+			}
+		}
+		return sb.toString();
 	}
 }

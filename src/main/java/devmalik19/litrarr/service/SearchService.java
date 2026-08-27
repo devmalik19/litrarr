@@ -10,6 +10,7 @@ import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.helper.PriorityHelper;
+import devmalik19.litrarr.helper.StringHelper;
 import devmalik19.litrarr.repository.BlocklistRepository;
 import devmalik19.litrarr.repository.LibraryRepository;
 import devmalik19.litrarr.repository.SearchRepository;
@@ -112,7 +113,8 @@ public class SearchService
 	public Page<SearchResult> interactiveSearch(Integer id, Pageable pageable) throws Exception
 	{
 		Search search = getSearchById(id);
-		List<SearchResult> searchResults = Arrays.asList(networkService.getSearchResults(search.getAuthor() + " " + search.getTitle()));
+		String query = StringHelper.buildQuery(search.getAuthor(), search.getTitle());
+		List<SearchResult> searchResults = Arrays.asList(networkService.getSearchResults(query));
 		return PaginationHelper.prepareResults(searchResults, pageable);
 	}
 

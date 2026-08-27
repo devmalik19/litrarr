@@ -56,6 +56,13 @@ public class ControllerConfig
 	}
 
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+	@ExceptionHandler(java.io.IOException.class)
+	public void ioError(java.io.IOException e)
+	{
+		logger.debug("Client disconnected: {}", e.getMessage());
+	}
+
+	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	@ExceptionHandler(Exception.class)
 	public void all(Exception e)
 	{

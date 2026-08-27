@@ -13,13 +13,17 @@ public class SearchHelper {
 	}
 
 	public static boolean progressiveSearch(Search search, SearchRepository searchRepository, QueryExecutor executor) throws Exception {
-		DownloadState downloadState = executor.execute(search.getAuthor() + " " + search.getTitle() + " " + search.getYear());
+		String author = search.getAuthor();
+		String title = search.getTitle();
+		String year = search.getYear();
+
+		DownloadState downloadState = executor.execute(StringHelper.buildQuery(author, title, year));
 
 		if (downloadState.isEmpty())
-			downloadState = executor.execute(search.getAuthor() + " " + search.getTitle());
+			downloadState = executor.execute(StringHelper.buildQuery(author, title));
 
 		if (downloadState.isEmpty())
-			downloadState = executor.execute(search.getTitle());
+			downloadState = executor.execute(StringHelper.buildQuery(title));
 
 		boolean isSuccess = !downloadState.isEmpty();
 
