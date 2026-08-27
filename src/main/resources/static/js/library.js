@@ -12,3 +12,24 @@ document.addEventListener('DOMContentLoaded', function() {
 		});
 	});
 });
+
+async function refreshItemMetadata(event, button)
+{
+	event.preventDefault();
+
+	const id = button.getAttribute('data-id');
+	const originalText = button.textContent;
+	button.disabled = true;
+	button.textContent = '...';
+
+	const response = await fetch('/library/metadata/' + id, { method: 'POST' });
+
+	if (response.ok)
+	{
+		button.textContent = '✅';
+	}
+	else
+	{
+		button.textContent = '❌';
+	}
+}

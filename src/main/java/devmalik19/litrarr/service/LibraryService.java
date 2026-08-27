@@ -298,9 +298,9 @@ public class LibraryService
 	}
 
 	@Transactional
-	public int resetAllMetadataFlags()
+	public int resetMetadataFlagsByCategory(Category category)
 	{
-		return libraryRepository.resetAllMetadataFlags();
+		return libraryRepository.resetMetadataFlagsByCategory(category);
 	}
 
 	public static HashMap<Category, String> getLibrariesPath() throws Exception

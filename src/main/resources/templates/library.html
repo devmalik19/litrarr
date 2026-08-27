@@ -16,8 +16,8 @@
 						<option th:value="${'?sort=name' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'name'}">Sort: Alphabetical</option>
 						<option th:value="${'?sort=directory' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'directory'}">Sort: Directory</option>
 					</select>
-					<form th:action="@{/library/metadata/all}" method="post" class="inline-form">
-						<button type="submit" class="button">Refresh All Metadata</button>
+					<form th:action="@{/library/metadata/category/{category}(category=${category})}" method="post" class="inline-form">
+						<button type="submit" class="button">Refresh Metadata</button>
 					</form>
 				</div>
 			</div>

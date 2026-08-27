@@ -116,6 +116,10 @@ async function fetchResults()
 
 async function download(button)
 {
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = '...';
+
     const downloadUrl = button.getAttribute('data-url');
     const protocol = button.getAttribute('data-protocol');
     const body = {
@@ -123,13 +127,35 @@ async function download(button)
             protocol: protocol
     };
     const response = await doPostRequestWithBody("search/download", body);
+
+    if (response.ok)
+    {
+        button.textContent = '✅';
+    }
+    else
+    {
+        button.textContent = '❌';
+    }
 }
 
 async function addSearch(button)
 {
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = '...';
+
     const payload = button.getAttribute('data-payload');
     const data = JSON.parse(payload);
     const response = await doPostRequestWithBody("search/add", data);
+
+    if (response.ok)
+    {
+        button.textContent = '✅';
+    }
+    else
+    {
+        button.textContent = '❌';
+    }
 }
 
 async function deleteSearch(id)

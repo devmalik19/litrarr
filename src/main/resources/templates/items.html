@@ -17,7 +17,9 @@
 						<option th:value="${'/library/view/' + library.id + '?sort=directory' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'directory'}">Sort: Directory</option>
 					</select>
 					<form th:action="@{'/library/metadata/' + ${library.id}}" method="post" class="inline-form">
-						<button type="submit" class="button">Refresh Metadata</button>
+						<button type="button" class="button"
+								th:data-id="${library.id}"
+								onclick="refreshItemMetadata(event, this)">Refresh Metadata</button>
 					</form>
 				</div>
 			</div>
