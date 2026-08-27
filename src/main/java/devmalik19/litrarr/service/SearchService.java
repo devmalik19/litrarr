@@ -2,6 +2,7 @@ package devmalik19.litrarr.service;
 
 import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.constants.SearchStatus;
+import devmalik19.litrarr.data.dao.Blocklist;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.DownloadRequest;
@@ -9,6 +10,7 @@ import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.helper.PriorityHelper;
+import devmalik19.litrarr.repository.BlocklistRepository;
 import devmalik19.litrarr.repository.LibraryRepository;
 import devmalik19.litrarr.repository.SearchRepository;
 import devmalik19.litrarr.service.metadata.MetaDataService;
@@ -17,6 +19,7 @@ import devmalik19.litrarr.service.thirdparty.NetworkService;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -34,6 +37,7 @@ public class SearchService
 	private final PluginsService pluginsService;
 	private final DownloadService downloadService;
 	private final SearchRepository searchRepository;
+	private final BlocklistRepository blocklistRepository;
 	private final LibraryRepository libraryRepository;
 	private final MetaDataService metaDataService;
 
@@ -43,6 +47,7 @@ public class SearchService
 						 PluginsService pluginsService,
 						 DownloadService downloadService,
 						 SearchRepository searchRepository,
+						 BlocklistRepository blocklistRepository,
 						 LibraryRepository libraryRepository,
 						 MetaDataService metaDataService)
 	{
@@ -50,6 +55,7 @@ public class SearchService
 		this.pluginsService = pluginsService;
 		this.downloadService = downloadService;
 		this.searchRepository = searchRepository;
+		this.blocklistRepository = blocklistRepository;
 		this.libraryRepository = libraryRepository;
 		this.metaDataService = metaDataService;
 	}
@@ -124,15 +130,17 @@ public class SearchService
 		search.setStatus(SearchStatus.SEARCHING);
 		searchRepository.save(search);
 
+		Set<String> blocklist = getBlocklistIdentifiers(search);
+
 		boolean isSuccess;
 		for (Entry<String, Integer> entry : sortedServices)
 		{
 			try
 			{
 				if (NetworkService.services.contains(entry.getKey()))
-					isSuccess = networkService.search(search);
+					isSuccess = networkService.search(search, blocklist);
 				else
-					isSuccess = pluginsService.search(search);
+					isSuccess = pluginsService.search(search, blocklist);
 
 				if (isSuccess)
 					break;
@@ -143,6 +151,13 @@ public class SearchService
 			}
 		}
 		logger.info("Search for {} finish", search.getTitle());
+	}
+
+	private Set<String> getBlocklistIdentifiers(Search search)
+	{
+		return blocklistRepository.findBySearch(search).stream()
+			.map(Blocklist::getIdentifier)
+			.collect(Collectors.toSet());
 	}
 
 	public void reset()
@@ -173,21 +188,48 @@ public class SearchService
 		try
 		{
 			SearchStatus previousStatus = search.getStatus();
+			Set<String> blocklist = getBlocklistIdentifiers(search);
 			networkService.checkDownloads(search);
-			pluginsService.checkDownloads(search);
+			pluginsService.checkDownloads(search, blocklist);
 
 			if (search.getStatus() != previousStatus)
 			{
 				if (search.getStatus() == SearchStatus.COMPLETED)
 				{
 					downloadService.process(search);
+					searchRepository.save(search);
 				}
-				searchRepository.save(search);
+				else if (search.getStatus() == SearchStatus.FAILED)
+				{
+					addToBlocklist(search);
+					search.setStatus(SearchStatus.NEW);
+					search.setData(null);
+					searchRepository.save(search);
+					logger.info("Download failed for search id={}, added to blocklist. Retrying.", search.getId());
+					searchEntry(search);
+				}
+				else
+				{
+					searchRepository.save(search);
+				}
 			}
 		}
 		catch (Exception e)
 		{
 			logger.error("Download check failed for search id={}: {}", search.getId(), e.getMessage());
+		}
+	}
+
+	private void addToBlocklist(Search search)
+	{
+		if (search.getData() != null && search.getData().getIdentifier() != null)
+		{
+			Blocklist entry = new Blocklist();
+			entry.setSearch(search);
+			entry.setIdentifier(search.getData().getIdentifier());
+			entry.setService(search.getData().getService());
+			blocklistRepository.save(entry);
+			logger.info("Blocklisted '{}' for search id={}", search.getData().getIdentifier(), search.getId());
 		}
 	}
 }

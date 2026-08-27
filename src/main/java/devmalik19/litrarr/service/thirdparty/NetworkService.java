@@ -78,12 +78,17 @@ public class NetworkService
 			sabnzbdService.addNzb(downloadRequest.getUrl());
 	}
 
-	public boolean search(Search search) throws Exception
+	public boolean search(Search search, Set<String> blocklist) throws Exception
 	{
-		return SearchHelper.progressiveSearch(search, searchRepository, this::search);
+		return SearchHelper.progressiveSearch(search, searchRepository, query -> search(query, blocklist));
 	}
 
-	public DownloadState search(String query) throws Exception
+	public boolean search(Search search) throws Exception
+	{
+		return search(search, Collections.emptySet());
+	}
+
+	public DownloadState search(String query, Set<String> blocklist) throws Exception
 	{
 		logger.info("Searching network services");
 
@@ -103,6 +108,12 @@ public class NetworkService
 
 		for(SearchResult result: results)
 		{
+			if (blocklist.contains(result.getTitle()))
+			{
+				logger.debug("Skipping blocklisted result: {}", result.getTitle());
+				continue;
+			}
+
 			logger.debug("Matching {} with search results {}", query, result.getTitle());
 			if(FilesHelper.isMatch(query, result.getTitle()))
 			{
@@ -116,6 +127,11 @@ public class NetworkService
 			}
 		}
 		return downloadState;
+	}
+
+	public DownloadState search(String query) throws Exception
+	{
+		return search(query, Collections.emptySet());
 	}
 
 	public ConnectionSettings getConnectionsSettingsForIndexes()

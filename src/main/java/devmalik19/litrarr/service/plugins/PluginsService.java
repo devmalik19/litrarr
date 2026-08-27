@@ -3,9 +3,11 @@ package devmalik19.litrarr.service.plugins;
 import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
 import devmalik19.litrarr.repository.SearchRepository;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -59,11 +61,11 @@ public class PluginsService
 	/**
 	 * Tries each registered plugin in order until one successfully submits a search.
 	 */
-	public boolean search(Search search) throws Exception
+	public boolean search(Search search, Set<String> blocklist) throws Exception
 	{
 		for (PluginHandler handler : handlers)
 		{
-			if (handler.search(search))
+			if (handler.search(search, blocklist))
 			{
 				searchRepository.save(search);
 				return true;
@@ -72,10 +74,20 @@ public class PluginsService
 		return false;
 	}
 
+	public boolean search(Search search) throws Exception
+	{
+		return search(search, Collections.emptySet());
+	}
+
 	/**
 	 * Routes download checks to the correct plugin based on the service name in DownloadState.
 	 */
 	public void checkDownloads(Search search) throws Exception
+	{
+		checkDownloads(search, Collections.emptySet());
+	}
+
+	public void checkDownloads(Search search, Set<String> blocklist) throws Exception
 	{
 		if (search.getData() == null) return;
 
@@ -84,7 +96,7 @@ public class PluginsService
 		PluginHandler handler = handlersByPending.get(service);
 		if (handler != null)
 		{
-			handler.checkSearchAndDownload(search);
+			handler.checkSearchAndDownload(search, blocklist);
 			return;
 		}
 
