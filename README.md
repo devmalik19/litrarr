@@ -7,20 +7,145 @@ One stop solution to all your literature needs.
 - Ebooks
 - Audiobooks
 
-## Requirements
+> Litrarr is in alpha. Expect breaking changes, including to the database schema.
+
+## Features
+
+- Search for books, comics, manga and audiobooks through your indexers
+- Send downloads to your download clients
+- Scan and browse your library
+- Fetch metadata and covers from online sources
+
+## Integrations
+
+- **Prowlarr**: indexer management and search
+- **qBittorrent**: torrent download client
+- **SABnzbd**: usenet download client
+- **Slskd**: P2P (Soulseek) search and download
+- **Google Books API**: book metadata
+- **ComicVine**: comic metadata
+- **MyAnimeList** (falls back to Jikan): manga metadata
+
+## Supported file types
+
+`CBZ`, `CBR`, `EPUB`, `PDF`, `MOBI`, `AZW3`, `MP3`, `M4B`, `FLAC`, `OGG`
+
+## Library layout
+
+Comics and manga:
+
+```
+comics/<series>/#<issue number, zero padded>/<issue title>.<ext>
+comics/Sample Title/#001/Origins.cbz
+comics/Sample Title/#002/#002.cbz      (no title: the file is named after the issue number)
+manga/<series>/#<volume number>/<volume>.<ext>
+```
+
+Books and audiobooks:
+
+```
+books/<author>/<book>/<file>
+audiobooks/<author>/<book>/<file>
+```
+
+Downloaded comics and manga are moved into this layout automatically. Issue numbers are whole numbers padded to three digits (`#001`).
+
+Downloaded `CBR` files are converted to `CBZ` with [7-Zip](https://www.7-zip.org/), which is already included in the Docker image. For local development install it and make sure `7zz`, `7z` or `7za` is on your PATH, or set `SEVENZIP_PATH`. Without 7-Zip, real RAR files stay as `CBR` (CBR files that are really ZIP files are still renamed). Files already in your library are not converted.
+
+## Docker
+
+Images are published to `ghcr.io/devmalik19/litrarr:latest`.
+
+### Docker command
+
+```bash
+docker run -p 3800:3800 \
+  -v /path/to/config:/config \
+  -v /path/to/library:/library \
+  -v /path/to/downloads:/downloads \
+  ghcr.io/devmalik19/litrarr:latest
+```
+
+### Docker compose
+
+```yaml
+services:
+    litrarr:
+        image: ghcr.io/devmalik19/litrarr:latest
+        ports:
+            - "3800:3800"
+        volumes:
+            - /path/to/config:/config
+            - /path/to/library:/library
+            - /path/to/download-client-downloads:/downloads
+        environment:
+            # - APP_USER=user
+            # - APP_PASSWORD=XXXXXX
+        restart: unless-stopped
+```
+
+### Volumes
+
+| Path         | Purpose                                                              |
+|--------------|----------------------------------------------------------------------|
+| `/config`    | Database and cache. Required, mount it to keep your data.           |
+| `/library`   | Your books, comics, manga and audiobooks.                            |
+| `/downloads` | The folder your download client saves to. Must match its own path.   |
+
+## Configuration
+
+All settings are environment variables. Everything is optional.
+
+| Variable               | Default      | Description                                                                          |
+|------------------------|--------------|--------------------------------------------------------------------------------------|
+| `PORT`                 | `3800`       | HTTP port.                                                                           |
+| `BASE_URL`             | `/`          | Sub-path to run under, for example `/litrarr` behind a reverse proxy.                |
+| `APP_USER`             | not set      | Login username. Login is enabled only when both `APP_USER` and `APP_PASSWORD` are set. |
+| `APP_PASSWORD`         | not set      | Login password.                                                                      |
+| `CONFIG_PATH`          | `/config`    | Database and cache folder.                                                           |
+| `LIBRARY_PATH`         | `/library`   | Root of your library.                                                                |
+| `DOWNLOAD_PATH`        | `/downloads` | Download client folder.                                                              |
+| `GOOGLE_BOOKS_API_KEY` | empty        | Google Books API key for metadata search.                                            |
+| `COMIC_VINE_API_KEY`   | empty        | ComicVine API key for comic metadata.                                                |
+| `MYANIMELIST_API_KEY`  | empty        | MyAnimeList client ID for manga metadata. Falls back to Jikan if not set.            |
+| `SEVENZIP_PATH`        | empty        | Path to the 7-Zip program. Empty: `7zz`, `7z` and `7za` are looked up on the PATH.   |
+| `USER_AGENT`           | `Litrarr/1.0`| User agent sent to external services.                                                |
+| `LOGGING_LEVEL`        | `INFO`       | Root log level, for example `DEBUG`.                                                 |
+
+Library folders (comics, manga, books, audiobooks) are set in the app under Settings. Defaults are `/comics`, `/manga`, `/books` and `/audiobooks`, relative to `LIBRARY_PATH`.
+
+## Development
+
+### Requirements
 
 - Java 25 (JDK 25)
-- Maven (or use the included `mvnw` wrapper)
+- Maven, or the included `mvnw` wrapper
 
-## Running locally
+### Running locally
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-The app starts on port `3800` by default: http://localhost:3800
+The app starts on http://localhost:3800.
 
-## Building
+Local settings live in the `.env` file in the project root. Spring Boot loads it automatically, so it works the same from any IDE and from the command line. Real environment variables override it.
+
+The `.env` file turns on the `dev` profile, which on startup:
+
+- creates the `data/` folder (`config`, `downloads`, `library`) if it does not exist,
+- adds a few empty sample files to the library so you have something to scan,
+- turns off template caching, so HTML changes show up on refresh.
+
+`data/` is ignored by git. To start fresh, delete it.
+
+### Tests
+
+```bash
+./mvnw test
+```
+
+### Building
 
 ```bash
 ./mvnw package -DskipTests
@@ -28,67 +153,27 @@ The app starts on port `3800` by default: http://localhost:3800
 
 This produces a runnable jar at `target/litrarr-0.0.1-SNAPSHOT.jar`.
 
-## Docker
+### Database
 
-### Docker command
+Litrarr uses SQLite and Flyway. Migrations are in `src/main/resources/db/migration`. While the project is in alpha, the schema is kept in a single `V1__Setup.sql`. After pulling a schema change, delete `data/config/litrarr.db`.
 
-```
-docker run -p 3800:3800 ghcr.io/devmalik19/litrarr:latest
-```
-
-### Docker compose
-
-```yaml
-version: "3.8"
-services:
-    litrarr:
-        image: ghcr.io/devmalik19/litrarr:latest
-        ports:
-            - "3800:3800"
-        volumes:
-            - /path/to/config:/config 
-            - /path/to/library:/library #optional
-            - /path/to/download-client-downloads:/downloads #optional
-        environment:
-            # - PORT=3800  # Optional, if you want to change the port.
-            # - BASE_URL=/litrarr  # Optional, if you want to run the app under subfolder like domain.com/litrarr (useful for reverse proxy)
-            # - USER=user # Optional, if you want to change the default username.
-            # - PASSWORD=XXXXXX  # Optional, if you want to change the default password.
-            # - GOOGLE_BOOKS_API_KEY=your-key # Optional, Google Books API key for metadata search
-            # - COMIC_VINE_API_KEY=your-key # Optional, ComicVine API key for comic metadata search
-            # - MYANIMELIST_API_KEY=your-key # Optional, MyAnimeList Client ID for manga metadata (falls back to Jikan if not set)
-            # - LOGGING_LEVEL=DEBUG  # Optional
-        restart: unless-stopped
-```
-
-## Tech Stack
+## Tech stack
 
 - Spring Boot 4.0
 - Java 25
 - Thymeleaf (server-side rendering)
-- SQLite (default)
+- SQLite
 - Flyway (database migrations)
 - Caffeine (caching)
 
-## Integrations
-
-- **Prowlarr** — indexer management and search
-- **qBittorrent** — torrent download client
-- **SABnzbd** — usenet download client
-- **Slskd** — P2P (Soulseek) search and download
-- **Google Books API** — book metadata
-
-## Supported File Types
-
-`CBZ`, `CBR`, `EPUB`, `PDF`, `MOBI`, `AZW3`, `MP3`, `M4B`, `FLAC`, `OGG`
-
-## TODO
+## Roadmap
 
 ### Alpha release
+
 1. Metadata search and add to library
 2. Search by issues in comics and manga
 
 ### Good to have
+
 1. File icons and design
-2. ComicVine metadata integration
-3. MyAnimeList metadata integration
+2. Finish ComicVine and MyAnimeList metadata integration

@@ -7,6 +7,7 @@ import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.DownloadState;
+import devmalik19.litrarr.helper.IssuePathHelper;
 import devmalik19.litrarr.helper.StringHelper;
 import devmalik19.litrarr.repository.ItemRepository;
 import org.slf4j.Logger;
@@ -25,10 +26,12 @@ public class DownloadService
 	private static final Logger logger = LoggerFactory.getLogger(DownloadService.class);
 
 	private final ItemRepository itemRepository;
+	private final ComicConverterService comicConverterService;
 
-	public DownloadService(ItemRepository itemRepository)
+	public DownloadService(ItemRepository itemRepository, ComicConverterService comicConverterService)
 	{
 		this.itemRepository = itemRepository;
+		this.comicConverterService = comicConverterService;
 	}
 
 	/**
@@ -71,7 +74,7 @@ public class DownloadService
 
 	/**
 	 * Handles multi-file comic/manga downloads.
-	 * Each issue file is moved to library.path/{issueNumber}/filename
+	 * Each issue file is moved to {series}/#{issue number, zero padded}/{issue title or #number}.{ext}
 	 * and matched to an existing Item record if possible.
 	 */
 	private void processComicDownload(Search search, Path downloadDir) throws IOException
@@ -91,10 +94,12 @@ public class DownloadService
 		// Get existing metadata items for this library to match against
 		List<Item> metadataItems = itemRepository.findByLibraryAndMissingTrue(library);
 
-		for (Path file : downloadedFiles)
+		for (Path downloaded : downloadedFiles)
 		{
+			// CBR files are converted to CBZ before they are moved into the library
+			Path file = comicConverterService.toCbz(downloaded);
 			String fileName = file.getFileName().toString();
-			String issueNumber = StringHelper.extractNumber(fileName);
+			Integer issueNumber = IssuePathHelper.parseIssueNumber(StringHelper.extractNumber(fileName));
 
 			if (issueNumber == null)
 			{
@@ -106,15 +111,17 @@ public class DownloadService
 				continue;
 			}
 
-			// Move to library.path/{issueNumber}/filename
-			Path issueDir = libraryPath.resolve(issueNumber);
-			Files.createDirectories(issueDir);
-			Path target = issueDir.resolve(fileName);
+			// Try to match to an existing metadata Item, its name is the issue title (or #number)
+			Item matchedItem = findMatchingItem(metadataItems, issueNumber);
+			String title = matchedItem != null ? matchedItem.getName() : null;
+
+			// Move to {series}/#001/{title or #001}.{ext}
+			String extension = StringUtils.getFilenameExtension(fileName);
+			Path target = IssuePathHelper.issueFile(libraryPath, issueNumber, title, extension);
+			Files.createDirectories(target.getParent());
 			Files.move(file, target, StandardCopyOption.REPLACE_EXISTING);
 			logger.info("Moved '{}' to '{}'", fileName, target);
 
-			// Try to match to an existing metadata Item
-			Item matchedItem = findMatchingItem(metadataItems, issueNumber);
 			if (matchedItem != null)
 			{
 				matchedItem.setPath(target.toString());
@@ -127,7 +134,8 @@ public class DownloadService
 			{
 				// No metadata item exists for this issue — create a new one
 				Item newItem = new Item();
-				newItem.setName(fileName);
+				newItem.setName(target.getFileName().toString());
+				newItem.setIssueNumber(issueNumber);
 				newItem.setPath(target.toString());
 				newItem.setType(library.getCategory());
 				newItem.setLibrary(library);
@@ -196,12 +204,11 @@ public class DownloadService
 	/**
 	 * Matches a downloaded file's issue number against metadata Items.
 	 */
-	private Item findMatchingItem(List<Item> metadataItems, String issueNumber)
+	private Item findMatchingItem(List<Item> metadataItems, Integer issueNumber)
 	{
 		for (Item item : metadataItems)
 		{
-			String itemNumber = StringHelper.extractNumber(item.getName());
-			if (itemNumber != null && itemNumber.equals(issueNumber))
+			if (issueNumber.equals(item.getIssueNumber()))
 				return item;
 		}
 		return null;

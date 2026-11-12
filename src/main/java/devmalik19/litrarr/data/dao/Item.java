@@ -33,6 +33,9 @@ public class Item
 	@Column(nullable = false)
 	private boolean missing = false;
 
+	/** Issue (comics) or volume (manga) number. Null for books and audiobooks. */
+	private Integer issueNumber;
+
 	@ManyToOne
 	@JoinColumn(name = "parent")
 	private Library library;

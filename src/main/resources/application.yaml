@@ -6,8 +6,10 @@ server:
 spring:
     application:
         name: litrarr
-    thymeleaf:
-        cache: false
+    config:
+        # Loads ./.env (relative to working dir) when present; skipped in Docker.
+        # Real OS environment variables still take precedence over this file.
+        import: "optional:file:.env[.properties]"
     datasource:
         url: "jdbc:sqlite:${app.path.config}/litrarr.db"
         driver-class-name: org.sqlite.JDBC
@@ -30,6 +32,9 @@ app:
         download: "${DOWNLOAD_PATH:/downloads}"
         library: "${LIBRARY_PATH:/library}"
     user-agent: ${USER_AGENT:Litrarr/1.0}
+    tools:
+        # Optional path to the 7-Zip program. Empty: look for 7zz, 7z and 7za on the PATH.
+        sevenzip: ${SEVENZIP_PATH:}
     api-keys:
         google-books: ${GOOGLE_BOOKS_API_KEY:}
         comic-vine: ${COMIC_VINE_API_KEY:}

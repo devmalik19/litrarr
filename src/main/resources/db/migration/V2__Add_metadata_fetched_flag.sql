@@ -1,1 +1,0 @@
-ALTER TABLE library ADD COLUMN "metadata_fetched" BOOLEAN NOT NULL DEFAULT 0;

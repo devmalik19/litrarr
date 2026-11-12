@@ -6,6 +6,7 @@ import devmalik19.litrarr.constants.*;
 import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.LibraryFilter;
+import devmalik19.litrarr.helper.IssuePathHelper;
 import devmalik19.litrarr.helper.SortingHelper;
 import devmalik19.litrarr.helper.StringHelper;
 import devmalik19.litrarr.repository.ItemRepository;
@@ -163,16 +164,25 @@ public class LibraryService
 				Library parentLibrary = (parentPath != null && savedDirectories.containsKey(parentPath))
 					? savedDirectories.get(parentPath) : null;
 
-				// For COMICS/MANGA, try to match against existing metadata-created items
+				// For COMICS/MANGA the issue number comes from the issue folder (#001)
 				Item item = itemRepository.findByPath(path.toString()).orElse(null);
-				if (item == null && parentLibrary != null
+				Integer issueNumber = null;
+				if (parentLibrary != null && parentLibrary.getType() == FolderType.ISSUE_NUMBER
 					&& (category == Category.COMICS || category == Category.MANGA))
 				{
-					item = findMatchingMetadataItem(parentLibrary, path);
+					issueNumber = IssuePathHelper.parseIssueNumber(StringHelper.extractNumber(parentLibrary.getName()));
+				}
+
+				// Try to match against existing metadata-created items of the series
+				if (item == null && issueNumber != null && parentLibrary.getLibrary() != null)
+				{
+					item = findMatchingMetadataItem(parentLibrary.getLibrary(), issueNumber);
 				}
 				if (item == null)
 					item = new Item();
 
+				if (issueNumber != null)
+					item.setIssueNumber(issueNumber);
 				item.setName(path.getFileName().toString());
 				item.setPath(path.toString());
 				item.setMissing(false);
@@ -199,24 +209,16 @@ public class LibraryService
 	}
 
 	/**
-	 * Tries to find an existing metadata-created Item (missing, no path) in the given library
-	 * that matches the scanned file by comparing issue/volume numbers in the filename.
+	 * Tries to find an existing metadata-created Item (missing, no path) in the given series
+	 * library with the same issue/volume number.
 	 */
-	private Item findMatchingMetadataItem(Library library, Path filePath)
+	private Item findMatchingMetadataItem(Library series, Integer issueNumber)
 	{
-		String fileName = filePath.getFileName().toString().toLowerCase();
-		List<Item> metadataItems = itemRepository.findByLibraryAndMissingTrue(library);
+		List<Item> metadataItems = itemRepository.findByLibraryAndMissingTrue(series);
 
 		for (Item metadataItem : metadataItems)
 		{
-			if (metadataItem.getPath() != null)
-				continue;
-
-			String itemName = metadataItem.getName().toLowerCase();
-			String itemNumber = StringHelper.extractNumber(itemName);
-			String fileNumber = StringHelper.extractNumber(fileName);
-
-			if (itemNumber != null && itemNumber.equals(fileNumber))
+			if (metadataItem.getPath() == null && issueNumber.equals(metadataItem.getIssueNumber()))
 				return metadataItem;
 		}
 		return null;

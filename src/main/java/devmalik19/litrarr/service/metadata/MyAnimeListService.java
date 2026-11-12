@@ -7,6 +7,7 @@ import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.helper.HttpHelper;
+import devmalik19.litrarr.helper.IssuePathHelper;
 import devmalik19.litrarr.helper.StringHelper;
 import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
@@ -131,6 +132,7 @@ public class MyAnimeListService
 			{
 				Item item = new Item();
 				item.setName("Volume " + i);
+				item.setIssueNumber(i);
 				item.setGuid(mangaId + "-vol-" + i);
 				item.setType(Category.MANGA);
 				item.setLibrary(parentLibrary);

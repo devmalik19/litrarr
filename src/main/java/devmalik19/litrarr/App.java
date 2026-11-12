@@ -1,5 +1,6 @@
 package devmalik19.litrarr;
 
+import devmalik19.litrarr.lifecycle.DevSetup;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
@@ -14,6 +15,9 @@ public class App
 {
 	public static void main(String[] args)
 	{
-		SpringApplication.run(devmalik19.litrarr.App.class, args);
+		SpringApplication application = new SpringApplication(App.class);
+		// Runs before the datasource connects. Does nothing unless the "dev" profile is active.
+		application.addListeners(new DevSetup());
+		application.run(args);
 	}
 }

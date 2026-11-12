@@ -1,8 +1,20 @@
+root = true
+
 [*]
 charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
 indent_style = tab
 
 [*.java]
 ij_java_class_brace_style = next_line
 ij_java_method_brace_style = next_line
 ij_java_block_brace_style = next_line
+
+# YAML does not allow tabs
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false

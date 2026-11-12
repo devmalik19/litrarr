@@ -7,6 +7,7 @@ import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.helper.HttpHelper;
+import devmalik19.litrarr.helper.IssuePathHelper;
 import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
@@ -120,8 +121,14 @@ public class ComicVineService
 
 			for (JsonNode issueNode : issuesNode)
 			{
+				String rawNumber = issueNode.path("issue_number").asText("");
+				Integer issueNumber = IssuePathHelper.parseIssueNumber(rawNumber);
+				JsonNode nameNode = issueNode.path("name");
+				String title = nameNode.isTextual() ? nameNode.asText().trim() : "";
+
 				Item item = new Item();
-				item.setName(issueNode.path("name").asText("Issue #" + issueNode.path("issue_number").asText("?")));
+				item.setName(!title.isEmpty() ? title : "Issue #" + (rawNumber.isEmpty() ? "?" : rawNumber));
+				item.setIssueNumber(issueNumber);
 				item.setGuid(issueNode.path("id").asText(null));
 				item.setType(Category.COMICS);
 				item.setLibrary(parentLibrary);
