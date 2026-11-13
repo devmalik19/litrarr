@@ -23,7 +23,10 @@ public class AudiobookConverterService
 {
 	private static final Logger logger = LoggerFactory.getLogger(AudiobookConverterService.class);
 
-	private static final Set<String> CONVERTIBLE_EXTENSIONS = Set.of("mp3", "flac", "ogg");
+	private static final Set<String> CONVERTIBLE_EXTENSIONS = Set.of("mp3", "flac", "ogg", "m4a", "m4b");
+	private static final long DEFAULT_BITRATE = 64_000;
+	private static final long MIN_BITRATE = 32_000;
+	private static final long MAX_BITRATE = 256_000;
 	private static final long PROBE_TIMEOUT_SECONDS = 60;
 	private static final long MERGE_TIMEOUT_HOURS = 6;
 
@@ -85,16 +88,22 @@ public class AudiobookConverterService
 			metadataFile = Files.createTempFile(directory, "litrarr-chapters-", ".txt");
 			Files.writeString(metadataFile, buildChapterMetadata(ordered, durations, title), StandardCharsets.UTF_8);
 
-			run(List.of(ffmpeg, "-y", "-nostdin", "-loglevel", "error",
+			List<AudioInfo> infos = new ArrayList<>();
+			for (int i = 0; i < ordered.size(); i++)
+				infos.add(probeAudio(ordered.get(i), durations.get(i)));
+
+			List<String> audioArgs = audioEncodingArgs(infos);
+			List<String> command = new ArrayList<>(List.of(ffmpeg, "-y", "-nostdin", "-loglevel", "error",
 				"-f", "concat", "-safe", "0", "-i", listFile.toString(),
 				"-i", metadataFile.toString(),
 				"-map", "0:a", "-map_metadata", "1", "-map_chapters", "1",
-				"-vn", "-c:a", "aac", "-b:a", "64k",
-				"-movflags", "+faststart", "-f", "ipod", temp.toString()),
-				MERGE_TIMEOUT_HOURS * 60, TimeUnit.MINUTES);
+				"-vn"));
+			command.addAll(audioArgs);
+			command.addAll(List.of("-movflags", "+faststart", "-f", "ipod", temp.toString()));
+			run(command, MERGE_TIMEOUT_HOURS * 60, TimeUnit.MINUTES);
 
 			Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-			logger.info("Merged {} files into '{}'", ordered.size(), target.getFileName());
+			logger.info("Merged {} files into '{}' ({})", ordered.size(), target.getFileName(), String.join(" ", audioArgs));
 			return true;
 		}
 		catch (IOException | RuntimeException e)
@@ -108,6 +117,70 @@ public class AudiobookConverterService
 			deleteQuietly(listFile);
 			deleteQuietly(metadataFile);
 		}
+	}
+
+	/**
+	 * Copies the audio untouched when every part is AAC with identical parameters.
+	 * Otherwise re-encodes to AAC at the highest source bitrate (capped), so quality is not reduced further.
+	 */
+	static List<String> audioEncodingArgs(List<AudioInfo> infos)
+	{
+		AudioInfo first = infos.get(0);
+		boolean copy = infos.stream().allMatch(info -> "aac".equalsIgnoreCase(info.codec())
+			&& info.sampleRate() > 0 && info.channels() > 0
+			&& info.sampleRate() == first.sampleRate() && info.channels() == first.channels());
+		if (copy)
+			return List.of("-c:a", "copy");
+
+		long bitrate = infos.stream().mapToLong(AudioInfo::bitRate).max().orElse(0);
+		if (bitrate <= 0)
+			bitrate = DEFAULT_BITRATE;
+		bitrate = Math.min(Math.max(bitrate, MIN_BITRATE), MAX_BITRATE);
+		return List.of("-c:a", "aac", "-b:a", Long.toString(bitrate));
+	}
+
+	record AudioInfo(String codec, int sampleRate, int channels, long bitRate)
+	{
+	}
+
+	private AudioInfo probeAudio(Path file, long durationMillis) throws IOException
+	{
+		String output = run(List.of(ffprobeCommand, "-v", "error", "-select_streams", "a:0",
+			"-show_entries", "stream=codec_name,sample_rate,channels,bit_rate",
+			"-of", "default=noprint_wrappers=1", file.toAbsolutePath().toString()),
+			PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+		String codec = "";
+		int sampleRate = 0;
+		int channels = 0;
+		long bitRate = 0;
+		for (String line : output.split("\\R"))
+		{
+			int index = line.indexOf('=');
+			if (index < 0)
+				continue;
+			String key = line.substring(0, index).trim();
+			String value = line.substring(index + 1).trim();
+			try
+			{
+				switch (key)
+				{
+					case "codec_name" -> codec = value;
+					case "sample_rate" -> sampleRate = Integer.parseInt(value);
+					case "channels" -> channels = Integer.parseInt(value);
+					case "bit_rate" -> bitRate = Long.parseLong(value);
+					default -> { }
+				}
+			}
+			catch (NumberFormatException e)
+			{
+				// value such as N/A, treated as unknown
+			}
+		}
+
+		if (bitRate <= 0 && durationMillis > 0)
+			bitRate = Files.size(file) * 8 * 1000 / durationMillis;
+		return new AudioInfo(codec, sampleRate, channels, bitRate);
 	}
 
 	private String buildConcatList(List<Path> files)

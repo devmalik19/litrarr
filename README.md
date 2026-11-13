@@ -54,7 +54,7 @@ Downloaded comics and manga are moved into this layout automatically. Issue numb
 Downloaded `CBR` files are converted to `CBZ` with [7-Zip](https://www.7-zip.org/), which is already included in the Docker image. For local development install it and make sure `7zz`, `7z` or `7za` is on your PATH, or set `SEVENZIP_PATH`. Without 7-Zip, real RAR files stay as `CBR` (CBR files that are really ZIP files are still renamed). Files already in your library are converted when you press **Convert** under Settings, General.
 
 ## Audiobooks
-An audiobook download with several `MP3`, `FLAC` or `OGG` files is merged into one `M4B` named after the book, with one chapter per file. Files are merged in natural order (`2` before `10`) and re-encoded to AAC at 64 kbps. This needs [ffmpeg](https://ffmpeg.org/), which is already included in the Docker image. For local development install it and make sure `ffmpeg` and `ffprobe` are on your PATH, or set `FFMPEG_PATH`. Without ffmpeg, or when `CONVERT_AUDIOBOOKS=false`, the files are moved into the book folder unchanged. Existing multi-file audiobooks are merged when you press **Convert** under Settings, General.
+An audiobook download with several `MP3`, `FLAC`, `OGG`, `M4A` or `M4B` files is merged into one `M4B` named after the book, with one chapter per file. Files are merged in natural order (`2` before `10`). If all parts are AAC with the same sample rate and channels, the audio is copied without re-encoding. Otherwise it is re-encoded to AAC at the highest bitrate of the source files (between 32 and 256 kbps). This needs [ffmpeg](https://ffmpeg.org/), which is already included in the Docker image. For local development install it and make sure `ffmpeg` and `ffprobe` are on your PATH, or set `FFMPEG_PATH`. Without ffmpeg, or when `CONVERT_AUDIOBOOKS=false`, the files are moved into the book folder unchanged. Existing multi-file audiobooks are merged when you press **Convert** under Settings, General.
 ## Docker
 
 Images are published to `ghcr.io/devmalik19/litrarr:latest`.
@@ -173,12 +173,3 @@ Litrarr uses SQLite and Flyway. Migrations are in `src/main/resources/db/migrati
 
 ## Roadmap
 
-### Alpha release
-
-1. Metadata search and add to library
-2. Search by issues in comics and manga
-
-### Good to have
-
-1. File icons and design
-2. Finish ComicVine, Hardcover and MyAnimeList metadata integration
