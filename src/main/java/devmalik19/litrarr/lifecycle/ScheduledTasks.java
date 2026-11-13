@@ -1,6 +1,7 @@
 package devmalik19.litrarr.lifecycle;
 
 import devmalik19.litrarr.service.SearchService;
+import devmalik19.litrarr.service.SeriesUpdateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -12,10 +13,12 @@ public class ScheduledTasks
 	private static final Logger logger = LoggerFactory.getLogger(ScheduledTasks.class);
 
 	private final SearchService searchService;
+	private final SeriesUpdateService seriesUpdateService;
 
-	public ScheduledTasks(SearchService searchService)
+	public ScheduledTasks(SearchService searchService, SeriesUpdateService seriesUpdateService)
 	{
 		this.searchService = searchService;
+		this.seriesUpdateService = seriesUpdateService;
 	}
 
 	@Scheduled(cron = "0 0 6 * * *")
@@ -25,6 +28,12 @@ public class ScheduledTasks
 		searchService.reset();
 		searchService.triggerSearch();
 		logger.info("Scheduled search ended!");
+	}
+
+	@Scheduled(cron = "0 0 5 * * *")
+	public void checkNewIssues()
+	{
+		seriesUpdateService.checkAllSeries();
 	}
 
 	@Scheduled(cron = "0 */10 * * * *")

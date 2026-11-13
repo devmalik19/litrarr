@@ -21,7 +21,9 @@ CREATE TABLE library (
 	"author" VARCHAR(255) NULL,
 	"publisher" VARCHAR(255) NULL,
 	"release_on" DATE NULL,
+	"complete" BOOLEAN NOT NULL DEFAULT 0,
 	"metadata_fetched" BOOLEAN NOT NULL DEFAULT 0,
+	"last_checked" DATE NULL,
 	"parent" INTEGER NULL,
 	CONSTRAINT FK_LIBRARY_ON_PARENT  FOREIGN KEY (parent) REFERENCES library (id)
 );

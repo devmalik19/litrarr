@@ -36,6 +36,13 @@ public class Library
 	@Column(nullable = false)
 	private boolean metadataFetched = false;
 
+	/** Comics/manga only. A complete series is never checked for new issues. Set manually, default is ongoing. */
+	@Column(nullable = false)
+	private boolean complete = false;
+
+	/** Last time the provider was checked for new issues of this series */
+	private LocalDate lastChecked;
+
 	private LocalDate releaseOn;
 
 	@ManyToOne

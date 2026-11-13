@@ -1,5 +1,6 @@
 package devmalik19.litrarr.controller;
 
+import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.service.metadata.MetaDataService;
@@ -31,11 +32,12 @@ public class HomeController
 		@RequestParam(value = "title") String title,
 		@RequestParam(value = "author", required = false) String author,
 		@RequestParam(value = "publisher", required = false) String publisher,
+		@RequestParam(value = "category") Category category,
 		Pageable pageable,
 		Model model
 	) throws Exception
 	{
-		Page<MetadataResult> searchResultsPage = metaDataService.search(title, author, publisher, pageable);
-		return PaginationHelper.prepareResponse(searchResultsPage, pageable, model);
+		Page<MetadataResult> searchResultsPage = metaDataService.search(title, author, publisher, category, pageable);
+		return PaginationHelper.prepareMetadataResponse(searchResultsPage, pageable, model);
 	}
 }

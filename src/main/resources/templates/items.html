@@ -7,6 +7,14 @@
 
 			<div class="page-header">
 				<h2 th:text="${library.name}">Library Name</h2>
+				<th:block th:if="${library.type != null and library.type.name() == 'TITLE' and (library.category.name() == 'COMICS' or library.category.name() == 'MANGA')}">
+					<span class="poster-badge" th:text="${library.complete} ? 'Complete' : 'Ongoing'">Ongoing</span>
+					<button type="button" class="button"
+							th:data-url="@{/library/complete/{id}(id=${library.id})}"
+							th:data-complete="${!library.complete}"
+							onclick="toggleComplete(this)"
+							th:text="${library.complete} ? 'Mark as Ongoing' : 'Mark as Complete'">Mark as Complete</button>
+				</th:block>
 				<div class="page-header-actions">
 					<form class="search-form" th:action="@{/library/view/{id}(id=${library.id})}" method="get">
 						<input type="hidden" name="sort" th:value="${sort}"/>
@@ -16,6 +24,10 @@
 						<option th:value="${'/library/view/' + library.id + '?sort=name' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'name'}">Sort: Alphabetical</option>
 						<option th:value="${'/library/view/' + library.id + '?sort=directory' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'directory'}">Sort: Directory</option>
 					</select>
+					<button type="button" class="button"
+							th:if="${library.type != null and (library.type.name() == 'TITLE' or library.type.name() == 'BOOK')}"
+							th:data-url="@{/library/search-missing/{id}(id=${library.id})}"
+							onclick="searchMissing(this)">Search for Missing</button>
 					<form th:action="@{'/library/metadata/' + ${library.id}}" method="post" class="inline-form">
 						<button type="button" class="button"
 								th:data-id="${library.id}"
@@ -39,6 +51,7 @@
 					<div class="poster-image" th:style="'background-image: url(' + @{/images/default.png} + ');'"></div>
 					<div class="poster-details">
 						<span class="poster-title" th:text="'📄 ' + ${item.name}">File Name</span>
+						<span class="poster-date" th:if="${item.releaseOn != null}" th:text="${#temporals.format(item.releaseOn, 'dd MMM yyyy')}">01 Jan 2020</span>
 						<span class="poster-badge missing-badge" th:if="${item.missing}">Missing</span>
 					</div>
 				</div>

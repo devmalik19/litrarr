@@ -4,13 +4,21 @@
 <div th:fragment="content">
 
 	<label for="title">Title</label>
-	<input id="title" placeholder="Enter title..."/>
+	<input id="title" placeholder="Enter title..." required/>
 
 	<label for="author">Author</label>
 	<input id="author" placeholder="Enter author..."/>
 
 	<label for="publisher">Publisher</label>
 	<input id="publisher" placeholder="Enter publisher..."/>
+
+	<label for="category">Type</label>
+	<select id="category" required>
+		<option value="COMICS">Comics</option>
+		<option value="BOOKS">Books</option>
+		<option value="AUDIOBOOKS">Audiobooks</option>
+		<option value="MANGA">Manga</option>
+	</select>
 
 	<button id="metadataSearchBtn" type="button" onclick="metadataSearch(this)">
 		Metadata Search

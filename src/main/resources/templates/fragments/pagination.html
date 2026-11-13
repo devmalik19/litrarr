@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<body>
+		<div th:fragment="pagination">
+			<div id="endpoint" th:data-endpoint="${endpoint}" hidden></div>
+			<nav th:if="${page.totalPages > 0}">
+				<ul>
+					<li th:class="${page.first} ? 'disabled'">
+						<a href="#"  th:onclick="|fetchPage('${page.number - 1}')|">Previous</a>
+					</li>
+					<li th:each="i : ${#numbers.sequence(1, page.totalPages)}" th:class="${currentPage == i ? 'active' : ''}">
+						<a href="#"  th:onclick="|fetchPage('${i - 1}')|" th:text="${i}"></a>
+					</li>
+					<li th:class="${page.last} ? 'disabled'">
+						<a href="#" th:onclick="|fetchPage('${page.number + 1}')|">Next</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</body>
+</html>

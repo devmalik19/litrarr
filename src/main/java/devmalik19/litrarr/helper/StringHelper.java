@@ -46,6 +46,19 @@ public class StringHelper
 		return null;
 	}
 
+	/**
+	 * Reduces a folder or title name to lowercase letters and digits, without anything in
+	 * brackets, so "Spider-Man (2019)" and "spider man" compare equal.
+	 */
+	public static String normalizeName(String name)
+	{
+		if (name == null)
+			return "";
+		return name.replaceAll("\\(.*?\\)|\\[.*?\\]", "")
+			.toLowerCase()
+			.replaceAll("[^\\p{L}\\p{N}]", "");
+	}
+
 	public static String buildQuery(String... parts)
 	{
 		StringBuilder sb = new StringBuilder();

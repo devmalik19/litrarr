@@ -6,15 +6,15 @@ import devmalik19.litrarr.data.dao.Blocklist;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.DownloadRequest;
-import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.data.dto.SearchResult;
+import org.springframework.util.StringUtils;
 import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.helper.PriorityHelper;
 import devmalik19.litrarr.helper.StringHelper;
 import devmalik19.litrarr.repository.BlocklistRepository;
+import devmalik19.litrarr.repository.ItemRepository;
 import devmalik19.litrarr.repository.LibraryRepository;
 import devmalik19.litrarr.repository.SearchRepository;
-import devmalik19.litrarr.service.metadata.MetaDataService;
 import devmalik19.litrarr.service.plugins.PluginsService;
 import devmalik19.litrarr.service.thirdparty.NetworkService;
 
@@ -40,7 +40,7 @@ public class SearchService
 	private final SearchRepository searchRepository;
 	private final BlocklistRepository blocklistRepository;
 	private final LibraryRepository libraryRepository;
-	private final MetaDataService metaDataService;
+	private final ItemRepository itemRepository;
 
 	private static List<Entry<String, Integer>> sortedServices;
 
@@ -50,7 +50,7 @@ public class SearchService
 						 SearchRepository searchRepository,
 						 BlocklistRepository blocklistRepository,
 						 LibraryRepository libraryRepository,
-						 MetaDataService metaDataService)
+						 ItemRepository itemRepository)
 	{
 		this.networkService = networkService;
 		this.pluginsService = pluginsService;
@@ -58,7 +58,7 @@ public class SearchService
 		this.searchRepository = searchRepository;
 		this.blocklistRepository = blocklistRepository;
 		this.libraryRepository = libraryRepository;
-		this.metaDataService = metaDataService;
+		this.itemRepository = itemRepository;
 	}
 
 	public void setPriorityOrder()
@@ -80,34 +80,50 @@ public class SearchService
 		networkService.addToDownloadClients(downloadRequest);
 	}
 
-	@Async
-	public void addSearch(MetadataResult metadataResult)
+	/**
+	 * Prepares a search for the missing files of a library entry.
+	 * Comics and manga: needs at least one missing issue/volume item.
+	 * Books and audiobooks: needs a library entry that has no file yet.
+	 * Reuses the library's previous search entry so the history does not fill up.
+	 *
+	 * @return the search to run, or null when there is nothing missing or a search is already running
+	 */
+	public Search prepareMissingSearch(Integer libraryId)
 	{
-		Search search = new Search();
-		search.setTitle(metadataResult.getTitle());
-		search.setAuthor(metadataResult.getAuthor());
-		search.setYear(metadataResult.getYear());
-		search.setCategory(metadataResult.getCategory());
+		Library library = libraryRepository.findById(libraryId).orElseThrow();
+		Category category = library.getCategory();
+
+		boolean hasMissing;
+		if (category == Category.COMICS || category == Category.MANGA)
+			hasMissing = !itemRepository.findByLibraryAndMissingTrue(library).isEmpty();
+		else
+			hasMissing = itemRepository.findByLibrary(library).stream().noneMatch(item -> !item.isMissing());
+		if (!hasMissing)
+			return null;
+
+		Search search = searchRepository.findFirstByLibraryOrderByIdDesc(library).orElse(new Search());
+		SearchStatus status = search.getStatus();
+		if (status == SearchStatus.NEW || status == SearchStatus.SEARCHING || status == SearchStatus.DOWNLOADING)
+			return null;
+
+		String author = library.getAuthor();
+		if (!StringUtils.hasText(author) && library.getLibrary() != null)
+			author = library.getLibrary().getName();
+
+		search.setTitle(library.getName());
+		search.setAuthor(author);
+		search.setYear(library.getReleaseOn() != null ? String.valueOf(library.getReleaseOn().getYear()) : null);
+		search.setCategory(category);
+		search.setLibrary(library);
+		search.setData(null);
 		search.setStatus(SearchStatus.NEW);
+		return searchRepository.save(search);
+	}
 
-		if (metadataResult.getLibrary() != null)
-		{
-			Optional<Library> library = libraryRepository.findById(metadataResult.getLibrary());
-			library.ifPresent(lib -> {
-				search.setLibrary(lib);
-				search.setCategory(lib.getCategory());
-			});
-		}
-
-		// For comics/manga, save issues from metadata when user initiates download
-		if (metadataResult.getCategory() != null
-			&& (metadataResult.getCategory() == Category.COMICS || metadataResult.getCategory() == Category.MANGA))
-		{
-			metaDataService.saveIssuesFromSearch(metadataResult);
-		}
-
-		Search saved = searchRepository.save(search);
-		searchEntry(saved);
+	@Async
+	public void runSearch(Search search)
+	{
+		searchEntry(search);
 	}
 
 	public Page<SearchResult> interactiveSearch(Integer id, Pageable pageable) throws Exception

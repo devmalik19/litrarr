@@ -33,3 +33,28 @@ async function refreshItemMetadata(event, button)
 		button.textContent = '❌';
 	}
 }
+
+async function searchMissing(button)
+{
+const originalText = button.textContent;
+button.disabled = true;
+button.textContent = '...';
+const response = await fetch(button.getAttribute('data-url'), { method: 'POST' });
+button.title = await response.text();
+button.textContent = response.ok ? '✅' : (response.status === 409 ? 'ℹ️' : '❌');
+setTimeout(() => {
+button.textContent = originalText;
+button.disabled = false;
+}, 3000);
+}
+
+async function toggleComplete(button)
+{
+button.disabled = true;
+button.textContent = '...';
+const response = await fetch(button.getAttribute('data-url') + '?complete=' + button.getAttribute('data-complete'), { method: 'POST' });
+if (response.ok)
+window.location.reload();
+else
+button.textContent = '❌';
+}

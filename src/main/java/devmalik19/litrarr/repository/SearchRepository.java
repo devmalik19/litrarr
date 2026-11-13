@@ -1,9 +1,11 @@
 package devmalik19.litrarr.repository;
 
 import devmalik19.litrarr.constants.SearchStatus;
+import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.Search;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,4 +20,6 @@ public interface SearchRepository extends JpaRepository<Search, Integer>
 	int update(SearchStatus oldStatus, SearchStatus newStatus);
 
     List<Search> findByStatus(SearchStatus searchStatus);
+
+	Optional<Search> findFirstByLibraryOrderByIdDesc(Library library);
 }

@@ -2,7 +2,6 @@ package devmalik19.litrarr.controller;
 
 import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.data.dto.DownloadRequest;
-import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.data.dto.SearchResult;
 import devmalik19.litrarr.helper.PaginationHelper;
 import devmalik19.litrarr.service.SearchService;
@@ -51,14 +50,6 @@ public class SearchController
 		return ResponseEntity.ok("");
 	}
 
-	@PostMapping("/search/add")
-	@ResponseBody
-	public ResponseEntity<String> add(@RequestBody @Valid MetadataResult metadataResult) throws Exception
-	{
-		searchService.addSearch(metadataResult);
-		return ResponseEntity.ok("");
-	}
-
 	@GetMapping("/search/delete")
 	public String delete(@RequestParam(value = "id") int id)
 	{
@@ -70,7 +61,7 @@ public class SearchController
 	public String interactive(@RequestParam(value = "id") Integer id, Pageable pageable, Model model) throws Exception
 	{
 		Page<SearchResult> searchResultsPage = searchService.interactiveSearch(id, pageable);
-		return PaginationHelper.prepareResponse(searchResultsPage, pageable, model);
+		return PaginationHelper.prepareInteractiveResponse(searchResultsPage, pageable, model);
 	}
 
 	@GetMapping("/search/trigger/{id}")

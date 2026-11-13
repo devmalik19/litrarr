@@ -8,7 +8,6 @@ import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.helper.HttpHelper;
 import devmalik19.litrarr.helper.IssuePathHelper;
-import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,48 +30,19 @@ public class ComicVineService
 {
 	private static final Logger logger = LoggerFactory.getLogger(ComicVineService.class);
 	private static final String BASE_URL = "https://comicvine.gamespot.com/api";
+	private static final int ISSUES_PAGE_SIZE = 100;
 
 	private final HttpRequestService httpRequestService;
 	private final ObjectMapper objectMapper;
-	private final FileSystemService fileSystemService;
 
 	@Value("${app.api-keys.comic-vine:}")
 	private String apiKey;
 
 	public ComicVineService(HttpRequestService httpRequestService,
-							ObjectMapper objectMapper,
-							FileSystemService fileSystemService)
+							ObjectMapper objectMapper)
 	{
 		this.httpRequestService = httpRequestService;
 		this.objectMapper = objectMapper;
-		this.fileSystemService = fileSystemService;
-	}
-
-	public void getMetaForLibrary(Library library)
-	{
-		try
-		{
-			String query = library.getName();
-			List<MetadataResult> results = search(query);
-			if (!results.isEmpty())
-			{
-				MetadataResult first = results.get(0);
-				if (StringUtils.hasText(first.getAuthor()))
-					library.setAuthor(first.getAuthor());
-
-				if (StringUtils.hasText(first.getImageUrl()))
-				{
-					String fileName = fileSystemService.downloadImageToCache(
-						first.getImageUrl(), "library", String.valueOf(library.getId()));
-					if (fileName != null)
-						library.setImage(fileName);
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			logger.error("Failed to fetch metadata for library '{}': {}", library.getName(), e.getMessage());
-		}
 	}
 
 	public void getMetaForItem(Item item)
@@ -94,47 +64,24 @@ public class ComicVineService
 
 		try
 		{
-			URI uri = UriComponentsBuilder.fromUriString(BASE_URL + "/volume/4050-" + volumeId)
-				.queryParam("api_key", apiKey)
-				.queryParam("format", "json")
-				.queryParam("field_list", "issues")
-				.build()
-				.toUri();
-
-			Map<String, String> headers = HttpHelper.jsonApiHeaders();
-
-			String response = httpRequestService.doGetRequest(uri, headers);
-			if (!StringUtils.hasText(response))
-				return issues;
-
-			JsonNode root = objectMapper.readTree(response);
-			int statusCode = root.path("status_code").asInt(-1);
-			if (statusCode != 1)
+			// The issues endpoint returns at most 100 issues per call, so page through them
+			int offset = 0;
+			int total = Integer.MAX_VALUE;
+			while (offset < total)
 			{
-				logger.warn("ComicVine API returned status_code {} when fetching issues for volume {}", statusCode, volumeId);
-				return issues;
-			}
+				JsonNode root = fetchIssuesPage(apiKey, volumeId, offset);
+				if (root == null)
+					return issues;
 
-			JsonNode issuesNode = root.path("results").path("issues");
-			if (!issuesNode.isArray())
-				return issues;
+				JsonNode issuesNode = root.path("results");
+				if (!issuesNode.isArray() || issuesNode.isEmpty())
+					break;
 
-			for (JsonNode issueNode : issuesNode)
-			{
-				String rawNumber = issueNode.path("issue_number").asText("");
-				Integer issueNumber = IssuePathHelper.parseIssueNumber(rawNumber);
-				JsonNode nameNode = issueNode.path("name");
-				String title = nameNode.isTextual() ? nameNode.asText().trim() : "";
+				total = root.path("number_of_total_results").asInt(0);
+				offset += issuesNode.size();
 
-				Item item = new Item();
-				item.setName(!title.isEmpty() ? title : "Issue #" + (rawNumber.isEmpty() ? "?" : rawNumber));
-				item.setIssueNumber(issueNumber);
-				item.setGuid(issueNode.path("id").asText(null));
-				item.setType(Category.COMICS);
-				item.setLibrary(parentLibrary);
-				item.setMissing(true);
-
-				issues.add(item);
+				for (JsonNode issueNode : issuesNode)
+					issues.add(toItem(issueNode, parentLibrary));
 			}
 		}
 		catch (Exception e)
@@ -145,49 +92,64 @@ public class ComicVineService
 		return issues;
 	}
 
-	/**
-	 * Fetches detailed issue information (including cover_date) for a single issue by its ID.
-	 * Returns the release date if available, null otherwise.
-	 */
-	public LocalDate getIssueCoverDate(String issueId)
+	/** Returns one page of issues, or null when the API did not return a usable response. */
+	private JsonNode fetchIssuesPage(String apiKey, String volumeId, int offset) throws Exception
 	{
-		String apiKey = getApiKey();
-		if (!StringUtils.hasText(apiKey) || !StringUtils.hasText(issueId))
+		URI uri = UriComponentsBuilder.fromUriString(BASE_URL + "/issues/")
+			.queryParam("api_key", apiKey)
+			.queryParam("format", "json")
+			.queryParam("filter", "volume:" + volumeId)
+			.queryParam("field_list", "id,name,issue_number,cover_date")
+			.queryParam("limit", ISSUES_PAGE_SIZE)
+			.queryParam("offset", offset)
+			.build()
+			.toUri();
+
+		String response = httpRequestService.doGetRequest(uri, HttpHelper.jsonApiHeaders());
+		if (!StringUtils.hasText(response))
 			return null;
 
+		JsonNode root = objectMapper.readTree(response);
+		int statusCode = root.path("status_code").asInt(-1);
+		if (statusCode != 1)
+		{
+			logger.warn("ComicVine API returned status_code {} when fetching issues for volume {}", statusCode, volumeId);
+			return null;
+		}
+		return root;
+	}
+
+	private Item toItem(JsonNode issueNode, Library parentLibrary)
+	{
+		String rawNumber = issueNode.path("issue_number").asText("");
+		JsonNode nameNode = issueNode.path("name");
+		String title = nameNode.isTextual() ? nameNode.asText().trim() : "";
+
+		Item item = new Item();
+		item.setName(!title.isEmpty() ? title : "Issue #" + (rawNumber.isEmpty() ? "?" : rawNumber));
+		item.setIssueNumber(IssuePathHelper.parseIssueNumber(rawNumber));
+		item.setGuid(issueNode.path("id").asText(null));
+		item.setReleaseOn(parseCoverDate(issueNode.path("cover_date").asText(null)));
+		item.setType(Category.COMICS);
+		item.setLibrary(parentLibrary);
+		item.setMissing(true);
+		return item;
+	}
+
+	/** ComicVine uses 00 for an unknown day or month, for example 2015-03-00. */
+	private LocalDate parseCoverDate(String coverDate)
+	{
+		if (!StringUtils.hasText(coverDate))
+			return null;
 		try
 		{
-			URI uri = UriComponentsBuilder.fromUriString(BASE_URL + "/issue/4000-" + issueId)
-				.queryParam("api_key", apiKey)
-				.queryParam("format", "json")
-				.queryParam("field_list", "cover_date")
-				.build()
-				.toUri();
-
-			Map<String, String> headers = HttpHelper.jsonApiHeaders();
-
-			String response = httpRequestService.doGetRequest(uri, headers);
-			if (!StringUtils.hasText(response))
-				return null;
-
-			JsonNode root = objectMapper.readTree(response);
-			if (root.path("status_code").asInt(-1) != 1)
-				return null;
-
-			String coverDate = root.path("results").path("cover_date").asText(null);
-			if (StringUtils.hasText(coverDate))
-				return LocalDate.parse(coverDate, DateTimeFormatter.ISO_LOCAL_DATE);
+			return LocalDate.parse(coverDate.replace("-00", "-01"), DateTimeFormatter.ISO_LOCAL_DATE);
 		}
 		catch (DateTimeParseException e)
 		{
-			logger.debug("Could not parse cover_date for issue {}: {}", issueId, e.getMessage());
+			logger.debug("Could not parse cover_date '{}': {}", coverDate, e.getMessage());
+			return null;
 		}
-		catch (Exception e)
-		{
-			logger.error("Failed to fetch cover_date for issue {}: {}", issueId, e.getMessage());
-		}
-
-		return null;
 	}
 
 	@Cacheable("ComicVineMetadata")

@@ -9,7 +9,6 @@ import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.helper.HttpHelper;
 import devmalik19.litrarr.helper.IssuePathHelper;
 import devmalik19.litrarr.helper.StringHelper;
-import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,53 +36,20 @@ public class MyAnimeListService
 
 	private final HttpRequestService httpRequestService;
 	private final ObjectMapper objectMapper;
-	private final FileSystemService fileSystemService;
 
 	@Value("${app.api-keys.mal-client-id:}")
 	private String malClientId;
 
 	public MyAnimeListService(HttpRequestService httpRequestService,
-							  ObjectMapper objectMapper,
-							  FileSystemService fileSystemService)
+							  ObjectMapper objectMapper)
 	{
 		this.httpRequestService = httpRequestService;
 		this.objectMapper = objectMapper;
-		this.fileSystemService = fileSystemService;
 	}
 
 	private boolean isEnabled()
 	{
 		return StringUtils.hasText(malClientId);
-	}
-
-	public void getMetaForLibrary(Library library)
-	{
-		if (!isEnabled())
-			return;
-
-		try
-		{
-			String query = library.getName();
-			List<MetadataResult> results = search(query);
-			if (!results.isEmpty())
-			{
-				MetadataResult first = results.get(0);
-				if (StringUtils.hasText(first.getAuthor()))
-					library.setAuthor(first.getAuthor());
-
-				if (StringUtils.hasText(first.getImageUrl()))
-				{
-					String fileName = fileSystemService.downloadImageToCache(
-						first.getImageUrl(), "library", String.valueOf(library.getId()));
-					if (fileName != null)
-						library.setImage(fileName);
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			logger.error("Failed to fetch metadata for library '{}': {}", library.getName(), e.getMessage());
-		}
 	}
 
 	public void getMetaForItem(Item item)

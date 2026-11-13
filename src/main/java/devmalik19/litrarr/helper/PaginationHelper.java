@@ -8,7 +8,6 @@ package devmalik19.litrarr.helper;
 
 import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.data.dto.SearchResult;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -22,7 +21,23 @@ import org.springframework.ui.Model;
 
 public class PaginationHelper
 {
-	public static <T> String prepareResponse(Page<T> page, Pageable pageable, Model model)
+	public static String prepareMetadataResponse(Page<MetadataResult> page, Pageable pageable, Model model)
+	{
+		fillModel(page, pageable, model);
+		model.addAttribute("headers", List.of("title", "author", "publisher", "year"));
+		model.addAttribute("endpoint", "home/search");
+		return "fragments/metadata-table :: data";
+	}
+
+	public static String prepareInteractiveResponse(Page<SearchResult> page, Pageable pageable, Model model)
+	{
+		fillModel(page, pageable, model);
+		model.addAttribute("headers", List.of("protocol", "indexer", "title", "seeders", "leechers"));
+		model.addAttribute("endpoint", "interactive");
+		return "fragments/interactive-table :: data";
+	}
+
+	private static <T> void fillModel(Page<T> page, Pageable pageable, Model model)
 	{
 		model.addAttribute("searchResults", page.getContent());
 		model.addAttribute("page", page);
@@ -42,23 +57,6 @@ public class PaginationHelper
 		model.addAttribute("currentPage", page.getNumber() + 1);
 		model.addAttribute("totalPages", page.getTotalPages());
 		model.addAttribute("totalItems", page.getTotalElements());
-
-		List<String> headers = new ArrayList<>();
-
-		if (page.hasContent() && page.getContent().get(0) instanceof MetadataResult)
-		{
-			headers = List.of("title", "author", "publisher", "year");
-			model.addAttribute("endpoint", "home/search");
-		}
-		else if (page.hasContent() && page.getContent().get(0) instanceof SearchResult)
-		{
-			headers = List.of("protocol", "indexer", "title", "seeders", "leechers");
-			model.addAttribute("isMetadataResult", true);
-			model.addAttribute("endpoint", "search");
-		}
-
-		model.addAttribute("headers", headers);
-		return "fragments/table :: data";
 	}
 
 	public static <T> Page<T>  prepareResults(List<T> results, Pageable pageable)

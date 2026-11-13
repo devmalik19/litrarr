@@ -6,6 +6,7 @@ import devmalik19.litrarr.constants.*;
 import devmalik19.litrarr.data.dao.Item;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.LibraryFilter;
+import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.helper.IssuePathHelper;
 import devmalik19.litrarr.helper.SortingHelper;
 import devmalik19.litrarr.helper.StringHelper;
@@ -16,11 +17,14 @@ import devmalik19.litrarr.service.metadata.MetaDataService;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.nio.file.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
@@ -224,6 +228,124 @@ public class LibraryService
 		return null;
 	}
 
+	/**
+	 * Adds a metadata search result to the library and links it to what is already on disk.
+	 * An existing folder with a similar name is reused, a new one is created in the library layout otherwise.
+	 * The library record gets the result's metadata and cover and, for comics and manga, its issues/volumes:
+	 * issues with a file in the folder keep it, the rest are saved as missing items.
+	 */
+	public Library addToLibrary(MetadataResult result) throws Exception
+	{
+		Category category = result.getCategory();
+		String categoryPath = getLibrariesPath().get(category);
+		if (!StringUtils.hasText(categoryPath))
+			throw new IllegalStateException("No library folder configured for " + category);
+		if (!StringUtils.hasText(result.getTitle()))
+			throw new IllegalArgumentException("Title is required");
+
+		Path root = Paths.get(Constants.LIBRARY_PATH + categoryPath);
+		Library library;
+		if (category.getRootFolderType() == FolderType.AUTHOR)
+		{
+			String authorName = StringUtils.hasText(result.getAuthor()) ? result.getAuthor() : "Unknown";
+			Library author = findOrCreateFolder(root, authorName, category, FolderType.AUTHOR, null);
+			author.setAuthor(authorName);
+			libraryRepository.save(author);
+			library = findOrCreateFolder(Path.of(author.getPath()), result.getTitle(), category, FolderType.BOOK, author);
+		}
+		else
+		{
+			library = findOrCreateFolder(root, result.getTitle(), category, FolderType.TITLE, null);
+		}
+
+		library.setAuthor(result.getAuthor());
+		library.setPublisher(result.getPublisher());
+		library.setGuid(result.getSourceId());
+		library.setReleaseOn(StringHelper.parseDate(result.getYear()));
+		library.setMetadataFetched(true);
+		library = libraryRepository.save(library);
+
+		if (!StringUtils.hasText(library.getImage()) && StringUtils.hasText(result.getImageUrl()))
+		{
+			String fileName = fileSystemService.downloadImageToCache(
+				result.getImageUrl(), "library", String.valueOf(library.getId()));
+			if (fileName != null)
+			{
+				library.setImage(fileName);
+				library = libraryRepository.save(library);
+			}
+		}
+
+		if (category == Category.COMICS || category == Category.MANGA)
+		{
+			// Files already in the folder keep their path, the rest of the issues become missing items
+			List<Item> issues = metaDataService.fetchIssues(library);
+			metaDataService.syncIssues(library, issues);
+			library.setLastChecked(LocalDate.now());
+			library = libraryRepository.save(library);
+		}
+		return library;
+	}
+
+	/**
+	 * Finds the folder for a metadata result before creating a new one, in this order:
+	 * a library record with the same path, a library record with a similar name (for example
+	 * "Spider-Man (2019)" for "Spider-Man"), a folder on disk with a similar name that was not scanned yet.
+	 * Only when none exists the folder is created.
+	 */
+	private Library findOrCreateFolder(Path parent, String name, Category category, FolderType type, Library parentLibrary) throws Exception
+	{
+		Path path = parent.resolve(safeFolderName(name)).toAbsolutePath().normalize();
+		Optional<Library> exact = libraryRepository.findByPath(path.toString());
+		if (exact.isPresent())
+			return exact.get();
+
+		String wanted = StringHelper.normalizeName(name);
+		if (!wanted.isEmpty())
+		{
+			for (Library candidate : libraryRepository.findByTypeAndCategory(type, category))
+			{
+				boolean sameParent = parentLibrary == null
+					? candidate.getLibrary() == null
+					: candidate.getLibrary() != null && parentLibrary.getId().equals(candidate.getLibrary().getId());
+				if (sameParent && wanted.equals(StringHelper.normalizeName(candidate.getName())))
+					return candidate;
+			}
+
+			if (Files.isDirectory(parent))
+			{
+				try (Stream<Path> children = Files.list(parent))
+				{
+					Optional<Path> folder = children
+						.filter(Files::isDirectory)
+						.filter(child -> wanted.equals(StringHelper.normalizeName(child.getFileName().toString())))
+						.findFirst();
+					if (folder.isPresent())
+						path = folder.get().toAbsolutePath().normalize();
+				}
+				Optional<Library> existing = libraryRepository.findByPath(path.toString());
+				if (existing.isPresent())
+					return existing.get();
+			}
+		}
+
+		Files.createDirectories(path);
+		Library library = new Library();
+		library.setName(path.getFileName().toString());
+		library.setPath(path.toString());
+		library.setCategory(category);
+		library.setType(type);
+		library.setLibrary(parentLibrary);
+		return libraryRepository.save(library);
+	}
+
+	private static String safeFolderName(String name)
+	{
+		String safe = name.replaceAll("[\\\\/:*?\"<>|]", " ").replaceAll("\\s+", " ").trim();
+		safe = safe.replaceAll("[. ]+$", "");
+		return safe.isEmpty() ? "Unknown" : safe;
+	}
+
 	public  List<Library> getLibrary(FolderType type, Category category, String sort, String search)
 	{
 		List<Library> library = libraryRepository.findByTypeAndCategory(type, category);
@@ -265,14 +387,26 @@ public class LibraryService
 
 	public List<Item> getFilteredItems(Library library, String search)
 	{
-		List<Item> items = library.getItemList();
+		List<Item> items = new ArrayList<>(library.getItemList());
 		if (StringUtils.hasText(search))
 		{
-			items = items.stream()
+			items = new ArrayList<>(items.stream()
 				.filter(item -> item.getName().toLowerCase().contains(search.toLowerCase()))
-				.toList();
+				.toList());
 		}
+		// Issues/volumes in numeric order, items without a number (books) by name
+		items.sort(Comparator
+			.comparing(Item::getIssueNumber, Comparator.nullsLast(Comparator.naturalOrder()))
+			.thenComparing(Item::getName, Comparator.nullsLast(SortingHelper.naturalOrder())));
 		return items;
+	}
+
+	public void setComplete(Integer id, boolean complete)
+	{
+		Library library = libraryRepository.findById(id)
+			.orElseThrow(() -> new EntityNotFoundException("Library not found: " + id));
+		library.setComplete(complete);
+		libraryRepository.save(library);
 	}
 
 	public Library findById(Integer id)

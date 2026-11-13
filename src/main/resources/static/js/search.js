@@ -2,7 +2,7 @@ let currentPage = 0;
 let pageSize = 100;
 let currentSortField = '';
 let currentSortDirection = '';
-let currentSearchTerm = '';
+let lastQuery = {};
 
 async function metadataSearch(searchButton)
 {
@@ -10,25 +10,39 @@ async function metadataSearch(searchButton)
  	searchButton.disabled = true;
     searchButton.textContent = '...';
 
-	const titleInput = document.getElementById("title").value;
-	const authorInput = document.getElementById("author").value;
-	const publisherInput = document.getElementById("publisher").value;
+	const titleInput = document.getElementById("title");
+	if (!titleInput.value.trim())
+	{
+		titleInput.focus();
+		searchButton.textContent = originalText;
+		searchButton.disabled = false;
+		return;
+	}
 
+	lastQuery = {
+		title: titleInput.value.trim(),
+		author: document.getElementById("author").value,
+		publisher: document.getElementById("publisher").value,
+		category: document.getElementById("category").value
+	};
+	currentPage = 0;
+	await loadResults("home/search");
+    searchButton.textContent = originalText;
+	searchButton.disabled = false;
+}
+
+// Loads one page of results for the last search, keeping its filters, page and sorting
+async function loadResults(endpoint)
+{
 	const sortParam = currentSortField ? `${currentSortField},${currentSortDirection}` : '';
 	const params = new URLSearchParams({
-        title: titleInput,
-        author: authorInput,
-        publisher: publisherInput,
-        page: currentPage,
+		...lastQuery,
+		page: currentPage,
 		size: pageSize,
 		sort: sortParam
 	});
-
-	url = "home/search?" + params.toString();
-    const response = await doGetRequest(url);
+    const response = await doGetRequest(endpoint + "?" + params.toString());
     document.getElementById("searchResults").innerHTML = response;
-    searchButton.textContent = originalText;
-	searchButton.disabled = false;
 }
 
 async function triggerSearch(searchButton, id)
@@ -57,17 +71,9 @@ async function interactiveSearch(searchButton, id)
  	searchButton.disabled = true;
     searchButton.textContent = '...';
 
-	const sortParam = currentSortField ? `${currentSortField},${currentSortDirection}` : '';
-	const params = new URLSearchParams({
-		id: id,
-		page: currentPage,
-		size: pageSize,
-		sort: sortParam
-	});
-
-	url = "interactive?" + params.toString();
-    const response = await doGetRequest(url);
-    document.getElementById("searchResults").innerHTML = response;
+	lastQuery = { id: id };
+	currentPage = 0;
+	await loadResults("interactive");
     searchButton.textContent = originalText;
 	searchButton.disabled = false;
 }
@@ -97,21 +103,8 @@ async function sortResults(header)
 
 async function fetchResults()
 {
-	const searchInput = document.getElementById("search");
-
-	const sortParam = currentSortField ? `${currentSortField},${currentSortDirection}` : '';
-	const params = new URLSearchParams({
-		search: searchInput.value,
-		page: currentPage,
-		size: pageSize,
-		sort: sortParam
-	});
-
-	const endpoint = document.getElementById("endpoint");
-    uri = endpoint.getAttribute('data-endpoint');
-	url = uri + "?" + params.toString();
-    const response = await doGetRequest(url);
-    document.getElementById("searchResults").innerHTML = response;
+	const endpoint = document.getElementById("endpoint").getAttribute('data-endpoint');
+	await loadResults(endpoint);
 }
 
 async function download(button)
@@ -138,7 +131,7 @@ async function download(button)
     }
 }
 
-async function addSearch(button)
+async function addToLibrary(button)
 {
     const originalText = button.textContent;
     button.disabled = true;
@@ -146,7 +139,7 @@ async function addSearch(button)
 
     const payload = button.getAttribute('data-payload');
     const data = JSON.parse(payload);
-    const response = await doPostRequestWithBody("search/add", data);
+    const response = await doPostRequestWithBody("library/add", data);
 
     if (response.ok)
     {

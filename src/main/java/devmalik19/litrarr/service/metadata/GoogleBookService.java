@@ -3,10 +3,8 @@ package devmalik19.litrarr.service.metadata;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devmalik19.litrarr.data.dao.Item;
-import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dto.MetadataResult;
 import devmalik19.litrarr.helper.HttpHelper;
-import devmalik19.litrarr.service.FileSystemService;
 import devmalik19.litrarr.service.HttpRequestService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,51 +27,15 @@ public class GoogleBookService
 
 	private final HttpRequestService httpRequestService;
 	private final ObjectMapper objectMapper;
-	private final FileSystemService fileSystemService;
 
 	@Value("${app.api-keys.google-books:}")
 	private String apiKey;
 
 	public GoogleBookService(HttpRequestService httpRequestService,
-							 ObjectMapper objectMapper,
-							 FileSystemService fileSystemService)
+							 ObjectMapper objectMapper)
 	{
 		this.httpRequestService = httpRequestService;
 		this.objectMapper = objectMapper;
-		this.fileSystemService = fileSystemService;
-	}
-
-	public void getMetaForLibrary(Library library)
-	{
-		if (!isEnabled())
-			return;
-
-		try
-		{
-			String query = library.getName();
-			if (StringUtils.hasText(library.getAuthor()))
-				query = library.getAuthor() + " " + query;
-
-			List<MetadataResult> results = search(query);
-			if (!results.isEmpty())
-			{
-				MetadataResult first = results.get(0);
-				if (StringUtils.hasText(first.getAuthor()))
-					library.setAuthor(first.getAuthor());
-
-				if (StringUtils.hasText(first.getImageUrl()))
-				{
-					String fileName = fileSystemService.downloadImageToCache(
-						first.getImageUrl(), "library", String.valueOf(library.getId()));
-					if (fileName != null)
-						library.setImage(fileName);
-				}
-			}
-		}
-		catch (Exception e)
-		{
-			logger.error("Failed to fetch metadata for library '{}': {}", library.getName(), e.getMessage());
-		}
 	}
 
 	public void getMetaForItem(Item item)

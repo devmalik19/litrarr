@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<body>
+		<!-- Results of the metadata search (Google Books, ComicVine, MyAnimeList) on the home page -->
+		<div th:fragment="data">
+			<table>
+				<thead>
+					<tr>
+						<th>Image</th>
+						<th th:each="header : ${headers}">
+							<a href="#"
+							   onclick="sortResults(this)"
+							   th:data-header="${header}"
+							   th:text="${#strings.capitalize(header)}">Header</a>
+							<span th:if="${sortField == header}">
+								<span th:if="${sortDirection == 'ASC'}">▲</span>
+								<span th:if="${sortDirection == 'DESC'}">▼</span>
+							</span>
+						</th>
+						<th>Library</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="result: ${searchResults}">
+						<td>
+							<img loading="lazy" alt="Cover" width="60"
+								 th:src="${#strings.isEmpty(result.imageUrl)} ? @{/images/default.png} : ${result.imageUrl}"
+								 th:data-fallback="@{/images/default.png}"
+								 onerror="this.onerror=null;this.src=this.dataset.fallback"/>
+						</td>
+						<td th:each="header : ${headers}"
+							th:text="${result[header]}">
+						</td>
+						<td>
+							<button type="button"
+									th:data-payload='${result}'
+									onclick="addToLibrary(this)">
+								Add
+							</button>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<div th:replace="~{fragments/pagination :: pagination}"></div>
+		</div>
+	</body>
+</html>

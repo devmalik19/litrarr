@@ -82,10 +82,10 @@ public class DownloadService
 		Library library = search.getLibrary();
 		Path libraryPath = Paths.get(library.getPath());
 
-		List<Path> downloadedFiles = findAllSupportedFiles(downloadDir, search.getTitle());
+		List<Path> downloadedFiles = findDownloadFiles(downloadDir, search.getData().getIdentifier());
 		if (downloadedFiles.isEmpty())
 		{
-			logger.warn("No supported files found for comic '{}' in {}", search.getTitle(), downloadDir);
+			logger.warn("No supported files found for download '{}' in {}", search.getData().getIdentifier(), downloadDir);
 			return;
 		}
 
@@ -154,7 +154,7 @@ public class DownloadService
 	 */
 	private void processSingleFileDownload(Search search, Path downloadDir) throws IOException
 	{
-		Path file = findFile(downloadDir, search.getTitle());
+		Path file = findFile(findDownloadFiles(downloadDir, search.getData().getIdentifier()), search.getTitle());
 		if (file == null)
 		{
 			logger.warn("Could not locate file for '{}' in {}", search.getTitle(), downloadDir);
@@ -173,32 +173,42 @@ public class DownloadService
 	}
 
 	/**
-	 * Finds all supported files in the download directory that could belong to this download.
-	 * Looks inside subdirectories as well (torrents often create a subfolder).
+	 * Finds the supported files that belong to this download only.
+	 * The identifier is the release name the download client knows (torrent name, NZB name or,
+	 * for Soulseek, the remote file path). A torrent or NZB is saved in a folder with that name,
+	 * a single file download is saved as a file with that name.
 	 */
-	private List<Path> findAllSupportedFiles(Path downloadDir, String title) throws IOException
+	private List<Path> findDownloadFiles(Path downloadDir, String identifier) throws IOException
 	{
+		if (!StringUtils.hasText(identifier))
+			return List.of();
+
+		// Soulseek identifiers are remote paths, only the file name is relevant
+		String name = identifier.substring(Math.max(identifier.lastIndexOf('/'), identifier.lastIndexOf('\\')) + 1);
+		String nameWithoutNzb = name.replaceAll("(?i)\\.nzb$", "");
+
 		try (Stream<Path> files = Files.walk(downloadDir))
 		{
-			List<Path> allFiles = files
+			return files
 				.filter(Files::isRegularFile)
 				.filter(this::isSupportedFile)
+				.filter(file -> belongsToDownload(downloadDir.relativize(file), name, nameWithoutNzb))
 				.toList();
-
-			// If there's a subfolder matching the title, prefer files from it
-			List<Path> matchingFiles = allFiles.stream()
-				.filter(f -> {
-					String parent = f.getParent().getFileName().toString();
-					return devmalik19.litrarr.helper.FilesHelper.isMatch(title, parent);
-				})
-				.toList();
-
-			if (!matchingFiles.isEmpty())
-				return matchingFiles;
-
-			// Otherwise return all supported files
-			return allFiles;
 		}
+	}
+
+	private boolean belongsToDownload(Path relativePath, String name, String nameWithoutNzb)
+	{
+		for (Path part : relativePath)
+		{
+			String partName = part.toString();
+			if (partName.equalsIgnoreCase(name) || partName.equalsIgnoreCase(nameWithoutNzb))
+				return true;
+		}
+		// Single file download named after the release without its file extension
+		String fileName = relativePath.getFileName().toString();
+		String baseName = StringUtils.stripFilenameExtension(fileName);
+		return baseName.equalsIgnoreCase(name) || baseName.equalsIgnoreCase(nameWithoutNzb);
 	}
 
 	/**
@@ -235,33 +245,18 @@ public class DownloadService
 	}
 
 	/**
-	 * Searches for a single file matching the search title in the download directory.
+	 * Picks the file matching the search title from the files of this download,
+	 * or the only file if there is just one.
 	 */
-	private Path findFile(Path downloadDir, String title) throws IOException
+	private Path findFile(List<Path> downloadFiles, String title)
 	{
-		try (Stream<Path> files = Files.walk(downloadDir))
+		for (Path file : downloadFiles)
 		{
-			List<Path> matchingFiles = files
-				.filter(Files::isRegularFile)
-				.filter(this::isSupportedFile)
-				.toList();
-
-			for (Path file : matchingFiles)
-			{
-				String fileName = file.getFileName().toString();
-				String nameWithoutExt = fileName.replaceAll("\\.\\w{3,5}$", "");
-				if (devmalik19.litrarr.helper.FilesHelper.isMatch(title, nameWithoutExt))
-				{
-					return file;
-				}
-			}
-
-			if (matchingFiles.size() == 1)
-			{
-				return matchingFiles.get(0);
-			}
+			String nameWithoutExt = StringUtils.stripFilenameExtension(file.getFileName().toString());
+			if (devmalik19.litrarr.helper.FilesHelper.isMatch(title, nameWithoutExt))
+				return file;
 		}
-		return null;
+		return downloadFiles.size() == 1 ? downloadFiles.get(0) : null;
 	}
 
 	private boolean isSupportedFile(Path path)

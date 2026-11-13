@@ -3,7 +3,12 @@ package devmalik19.litrarr.controller;
 import devmalik19.litrarr.constants.FolderType;
 import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.data.dao.Library;
+import devmalik19.litrarr.data.dao.Search;
 import devmalik19.litrarr.service.LibraryService;
+import devmalik19.litrarr.service.SearchService;
+import org.springframework.http.HttpStatus;
+import devmalik19.litrarr.data.dto.MetadataResult;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -12,6 +17,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -22,10 +28,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class LibraryController
 {
 	private final LibraryService libraryService;
+	private final SearchService searchService;
 
-	public LibraryController(LibraryService libraryService)
+	public LibraryController(LibraryService libraryService, SearchService searchService)
 	{
 		this.libraryService = libraryService;
+		this.searchService = searchService;
 	}
 
 	@GetMapping("/view/{id}")
@@ -60,6 +68,55 @@ public class LibraryController
 		model.addAttribute("sort", sort);
 		model.addAttribute("search", search);
 		return "library";
+	}
+
+	@PostMapping("/add")
+	@ResponseBody
+	public ResponseEntity<String> addToLibrary(@RequestBody @Valid MetadataResult metadataResult)
+	{
+		try
+		{
+			libraryService.addToLibrary(metadataResult);
+			return ResponseEntity.ok("");
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.internalServerError().body(e.getMessage());
+		}
+	}
+
+	@PostMapping("/complete/{id}")
+	@ResponseBody
+	public ResponseEntity<String> setComplete(@PathVariable("id") Integer id,
+											  @RequestParam("complete") boolean complete)
+	{
+		try
+		{
+			libraryService.setComplete(id, complete);
+			return ResponseEntity.ok("");
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.internalServerError().body(e.getMessage());
+		}
+	}
+
+	@PostMapping("/search-missing/{id}")
+	@ResponseBody
+	public ResponseEntity<String> searchMissing(@PathVariable("id") Integer id)
+	{
+		try
+		{
+			Search search = searchService.prepareMissingSearch(id);
+			if (search == null)
+				return ResponseEntity.status(HttpStatus.CONFLICT).body("Nothing missing, or a search is already running");
+			searchService.runSearch(search);
+			return ResponseEntity.ok("Searching for missing files");
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.internalServerError().body(e.getMessage());
+		}
 	}
 
 	@PostMapping("/metadata/{id}")
