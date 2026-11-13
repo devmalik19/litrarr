@@ -94,7 +94,7 @@ public class ComicVineService
 			.queryParam("api_key", apiKey)
 			.queryParam("format", "json")
 			.queryParam("filter", "volume:" + volumeId)
-			.queryParam("field_list", "id,name,issue_number,cover_date")
+			.queryParam("field_list", "id,name,issue_number,cover_date,image")
 			.queryParam("limit", ISSUES_PAGE_SIZE)
 			.queryParam("offset", offset)
 			.build()
@@ -127,6 +127,11 @@ public class ComicVineService
 		item.setReleaseOn(parseCoverDate(issueNode.path("cover_date").asText(null)));
 		item.setType(Category.COMICS);
 		item.setLibrary(parentLibrary);
+		JsonNode image = issueNode.path("image");
+		String imageUrl = image.path("medium_url").asText(null);
+		if (!StringUtils.hasText(imageUrl))
+			imageUrl = image.path("small_url").asText(null);
+		item.setImageUrl(imageUrl);
 		item.setMissing(true);
 		return item;
 	}

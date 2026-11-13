@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,6 +38,9 @@ public class Item
 	private boolean monitored = true;
 
 	private Integer issueNumber;
+
+	@Transient
+	private String imageUrl;
 
 	@ManyToOne
 	@JoinColumn(name = "parent")

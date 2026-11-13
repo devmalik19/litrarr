@@ -356,3 +356,29 @@ body[data-view="list"] .poster-grid
 	gap: 6px;
 	cursor: pointer;
 }
+
+/* Monitor toggle: checkbox rendered as a bookmark icon (filled = monitored) */
+input[onchange="toggleMonitor(this)"]
+{
+	-webkit-appearance: none;
+	appearance: none;
+	width: 16px;
+	height: 20px;
+	margin: 0;
+	cursor: pointer;
+	vertical-align: middle;
+	background-color: var(--muted-color);
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M3 2h10v15l-5-4-5 4z' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M3 2h10v15l-5-4-5 4z' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+input[onchange="toggleMonitor(this)"]:checked
+{
+	background-color: var(--sub-color);
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M3 2h10v15l-5-4-5 4z' fill='black' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='M3 2h10v15l-5-4-5 4z' fill='black' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+input[onchange="toggleMonitor(this)"]:disabled
+{
+	opacity: 0.5;
+	cursor: wait;
+}

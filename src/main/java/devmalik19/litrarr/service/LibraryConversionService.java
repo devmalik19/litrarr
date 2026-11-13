@@ -50,18 +50,23 @@ public class LibraryConversionService
 	}
 
 	@Async
-	public void convertExisting()
+	public void convertLibrary(Integer libraryId)
 	{
 		try
 		{
-			logger.info("Converting existing library files");
-			int comics = convertComics();
-			int audiobooks = convertAudiobooks();
-			logger.info("Conversion finished: {} comic files and {} audiobooks converted", comics, audiobooks);
+			Library library = libraryRepository.findById(libraryId).orElseThrow();
+			logger.info("Converting files in '{}'", library.getName());
+			int comics = 0;
+			int audiobooks = 0;
+			if (library.getCategory() == Category.COMICS || library.getCategory() == Category.MANGA)
+				comics = convertComics(itemRepository.findByLibrary(library));
+			else if (library.getCategory() == Category.AUDIOBOOKS)
+				audiobooks = convertAudiobooks(library);
+			logger.info("Conversion of '{}' finished: {} comic files and {} audiobooks converted", library.getName(), comics, audiobooks);
 		}
 		catch (Exception e)
 		{
-			logger.error("Converting existing files failed: {}", e.getMessage(), e);
+			logger.error("Converting files failed: {}", e.getMessage(), e);
 		}
 		finally
 		{
@@ -69,10 +74,10 @@ public class LibraryConversionService
 		}
 	}
 
-	private int convertComics()
+	private int convertComics(List<Item> items)
 	{
 		int converted = 0;
-		for (Item item : itemRepository.findAll())
+		for (Item item : items)
 		{
 			String path = item.getPath();
 			if (!StringUtils.hasText(path) || !path.toLowerCase().endsWith(".cbr"))
@@ -96,7 +101,7 @@ public class LibraryConversionService
 		return converted;
 	}
 
-	private int convertAudiobooks()
+	private int convertAudiobooks(Library library)
 	{
 		if (!audiobookConverterService.isAvailable())
 		{
@@ -104,8 +109,13 @@ public class LibraryConversionService
 			return 0;
 		}
 
+		List<Library> books = library.getType() == FolderType.BOOK
+			? List.of(library)
+			: libraryRepository.findByTypeAndCategory(FolderType.BOOK, Category.AUDIOBOOKS).stream()
+			.filter(book -> book.getLibrary() != null && library.getId().equals(book.getLibrary().getId()))
+			.toList();
+
 		int converted = 0;
-		List<Library> books = libraryRepository.findByTypeAndCategory(FolderType.BOOK, Category.AUDIOBOOKS);
 		for (Library book : books)
 		{
 			try
@@ -120,7 +130,6 @@ public class LibraryConversionService
 		}
 		return converted;
 	}
-
 	private boolean convertAudiobook(Library book) throws IOException
 	{
 		List<Item> sources = itemRepository.findByLibrary(book).stream()

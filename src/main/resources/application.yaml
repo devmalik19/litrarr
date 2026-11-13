@@ -7,8 +7,6 @@ spring:
     application:
         name: litrarr
     config:
-        # Loads ./.env (relative to working dir) when present; skipped in Docker.
-        # Real OS environment variables still take precedence over this file.
         import: "optional:file:.env[.properties]"
     datasource:
         url: "jdbc:sqlite:${app.path.config}/litrarr.db"

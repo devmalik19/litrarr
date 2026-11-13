@@ -81,55 +81,76 @@ libraryRepository.save(library);
 		};
 	}
 
-public List<Item> syncIssues(Library library, List<Item> fetched)
-{
-Map<Integer, Item> byNumber = new HashMap<>();
-Map<String, Item> byGuid = new HashMap<>();
-for (Item item : itemRepository.findByLibrary(library))
-{
-if (item.getIssueNumber() != null)
-byNumber.putIfAbsent(item.getIssueNumber(), item);
-if (item.getGuid() != null)
-byGuid.putIfAbsent(item.getGuid(), item);
-}
+	public List<Item> syncIssues(Library library, List<Item> fetched)
+	{
+		Map<Integer, Item> byNumber = new HashMap<>();
+		Map<String, Item> byGuid = new HashMap<>();
+		for (Item item : itemRepository.findByLibrary(library))
+		{
+			if (item.getIssueNumber() != null)
+				byNumber.putIfAbsent(item.getIssueNumber(), item);
+			if (item.getGuid() != null)
+				byGuid.putIfAbsent(item.getGuid(), item);
+		}
 
-List<Item> newItems = new ArrayList<>();
-List<Item> updated = new ArrayList<>();
-for (Item issue : fetched)
-{
-Item existing = issue.getIssueNumber() != null
-? byNumber.get(issue.getIssueNumber())
-: byGuid.get(issue.getGuid());
-if (existing == null)
-{
-newItems.add(issue);
-continue;
-}
+		List<Item> newItems = new ArrayList<>();
+		List<Item> updated = new ArrayList<>();
+		for (Item issue : fetched)
+		{
+			Item existing = issue.getIssueNumber() != null
+				? byNumber.get(issue.getIssueNumber())
+				: byGuid.get(issue.getGuid());
+			if (existing == null)
+			{
+				newItems.add(issue);
+				continue;
+			}
 
-boolean changed = false;
-if (existing.getGuid() == null && issue.getGuid() != null)
-{
-existing.setGuid(issue.getGuid());
-changed = true;
-}
-if (existing.getReleaseOn() == null && issue.getReleaseOn() != null)
-{
-existing.setReleaseOn(issue.getReleaseOn());
-changed = true;
-}
-if (existing.getType() == null)
-{
-existing.setType(issue.getType());
-changed = true;
-}
-if (changed)
-updated.add(existing);
-}
+			boolean changed = false;
+			if (existing.getGuid() == null && issue.getGuid() != null)
+			{
+				existing.setGuid(issue.getGuid());
+				changed = true;
+			}
+			if (existing.getReleaseOn() == null && issue.getReleaseOn() != null)
+			{
+				existing.setReleaseOn(issue.getReleaseOn());
+				changed = true;
+			}
+			if (existing.getType() == null)
+			{
+				existing.setType(issue.getType());
+				changed = true;
+			}
+			if (changed)
+				updated.add(existing);
+		}
 
-itemRepository.saveAll(updated);
-itemRepository.saveAll(newItems);
-return newItems;
-}
+		itemRepository.saveAll(updated);
+		itemRepository.saveAll(newItems);
+
+		Map<Integer, String> imageUrls = new HashMap<>();
+		for (Item issue : fetched)
+			if (issue.getIssueNumber() != null && issue.getImageUrl() != null)
+			imageUrls.putIfAbsent(issue.getIssueNumber(), issue.getImageUrl());
+		List<Item> withImages = new ArrayList<>();
+		for (Item item : itemRepository.findByLibrary(library))
+		{
+			if (StringUtils.hasText(item.getImage()))
+				continue;
+			String url = item.getImageUrl() != null ? item.getImageUrl() : imageUrls.get(item.getIssueNumber());
+			if (!StringUtils.hasText(url))
+				continue;
+			String fileName = fileSystemService.downloadImageToCache(url, "library", "item-" + item.getId());
+			if (fileName != null)
+			{
+				item.setImage(fileName);
+				withImages.add(item);
+			}
+		}
+		itemRepository.saveAll(withImages);
+		return newItems;
+	}
 	public Page<MetadataResult> search(String title, String author, String publisher, Category category, Pageable pageable)
 	{
 		List<String> parts = new ArrayList<>();

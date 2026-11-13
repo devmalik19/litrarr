@@ -11,7 +11,7 @@
 						<input type="hidden" name="sort" th:value="${sort}"/>
 						<input type="text" name="search" id="library-search" class="search-input" placeholder="Search..." th:value="${search}" />
 					</form>
-					<div class="view-toggle" role="group" aria-label="View mode">
+					<div class="view-toggle" data-scope="library" data-default="grid" role="group" aria-label="View mode">
 						<button type="button" class="button view-button" data-view="grid" onclick="setViewMode('grid')" title="Poster view" aria-label="Poster view">&#9638;</button>
 						<button type="button" class="button view-button" data-view="list" onclick="setViewMode('list')" title="List view" aria-label="List view">&#9776;</button>
 					</div>

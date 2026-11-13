@@ -4,6 +4,7 @@ import devmalik19.litrarr.constants.FolderType;
 import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.data.dao.Library;
 import devmalik19.litrarr.data.dao.Search;
+import devmalik19.litrarr.service.LibraryConversionService;
 import devmalik19.litrarr.service.LibraryService;
 import devmalik19.litrarr.service.SearchService;
 import org.springframework.http.HttpStatus;
@@ -29,11 +30,13 @@ public class LibraryController
 {
 	private final LibraryService libraryService;
 	private final SearchService searchService;
+	private final LibraryConversionService libraryConversionService;
 
-	public LibraryController(LibraryService libraryService, SearchService searchService)
+	public LibraryController(LibraryService libraryService, SearchService searchService, LibraryConversionService libraryConversionService)
 	{
 		this.libraryService = libraryService;
 		this.searchService = searchService;
+		this.libraryConversionService = libraryConversionService;
 	}
 
 	@GetMapping("/view/{id}")
@@ -130,6 +133,15 @@ public class LibraryController
 		{
 			return ResponseEntity.internalServerError().body(e.getMessage());
 		}
+	}
+	@PostMapping("/convert/{id}")
+	@ResponseBody
+	public ResponseEntity<String> convertFiles(@PathVariable("id") Integer id)
+	{
+		if (!libraryConversionService.tryStart())
+			return ResponseEntity.status(HttpStatus.CONFLICT).body("A conversion is already running");
+		libraryConversionService.convertLibrary(id);
+		return ResponseEntity.ok("Conversion started, progress is written to the log");
 	}
 	@PostMapping("/search-missing/{id}")
 	@ResponseBody

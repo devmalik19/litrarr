@@ -1,6 +1,11 @@
+function viewScope()
+{
+	const toggle = document.querySelector('.view-toggle');
+	return toggle ? toggle.getAttribute('data-scope') : 'default';
+}
 function setViewMode(mode)
 {
-	localStorage.setItem('viewMode', mode);
+	localStorage.setItem('viewMode:' + viewScope(), mode);
 	document.body.dataset.view = mode;
 	document.querySelectorAll('.view-button').forEach(function(b) {
 		b.classList.toggle('active', b.getAttribute('data-view') === mode);
@@ -19,7 +24,10 @@ async function toggleMonitor(checkbox)
 		row.classList.toggle('row-unmonitored', !checkbox.checked);
 }
 document.addEventListener('DOMContentLoaded', function() {
-	setViewMode(localStorage.getItem('viewMode') === 'list' ? 'list' : 'grid');
+	const toggle = document.querySelector('.view-toggle');
+	const fallback = toggle ? toggle.getAttribute('data-default') : 'grid';
+	const saved = localStorage.getItem('viewMode:' + viewScope());
+	setViewMode(saved === 'list' || saved === 'grid' ? saved : fallback);
 	const searchInput = document.getElementById('library-search');
 	if (!searchInput) return;
 	const entries = document.querySelectorAll('.poster-grid .poster, .list-view tbody tr');
@@ -71,4 +79,16 @@ async function toggleComplete(button)
 		window.location.reload();
 	else
 		button.textContent = '❌';
+}
+async function convertFiles(button)
+{
+	const originalText = button.textContent;
+	button.disabled = true;
+	button.textContent = '...';
+	const response = await fetch(button.getAttribute('data-url'), { method: 'POST' });
+	button.textContent = response.ok ? 'Conversion started' : (response.status === 409 ? 'Already running' : '❌');
+	setTimeout(function() {
+		button.textContent = originalText;
+		button.disabled = false;
+	}, 3000);
 }
