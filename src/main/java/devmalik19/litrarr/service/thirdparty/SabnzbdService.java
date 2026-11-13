@@ -61,7 +61,7 @@ public class SabnzbdService
 			{
 				String error = root.path("error").asText("Unknown error");
 				logger.error("SABnzbd rejected the NZB URL '{}': {}", url, error);
-				return downloadState; // returns empty state → treated as not found
+				return downloadState;
 			}
 
 			downloadState.setDownloadPath(connectionSettings.getCategory());
@@ -118,7 +118,7 @@ public class SabnzbdService
 
 			if (!found)
 			{
-				// Also check the active queue before marking as failed
+
 				String queueResponse = httpRequestService.doGetRequest(String.format("%s/api?mode=queue&output=json&apikey=%s",
 					connectionSettings.getUrl(), connectionSettings.getApiKey()));
 

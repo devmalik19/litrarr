@@ -1,9 +1,3 @@
-/**
- *  This class is to manage pagination and sorting.
- *  This code is related to UI presentation and there is no business logic,
- *  That's why I like to keep it in this separate file here.
- */
-
 package devmalik19.litrarr.helper;
 
 import devmalik19.litrarr.data.dto.MetadataResult;
@@ -79,7 +73,6 @@ public class PaginationHelper
 
 		return new PageImpl<>(pageContent, PageRequest.of(currentPage, pageSize), results.size());
 	}
-
 
 	private static  <T> List<T> sortResults(Pageable pageable, List<T> results)
 	{

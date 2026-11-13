@@ -16,11 +16,6 @@ public class SettingsHelper {
         this.objectMapper = objectMapper;
     }
 
-    /**
-     * Retrieves and deserializes ConnectionSettings for the given service key.
-     * Returns null only if the key is not found in the store.
-     * For all existing keys (including empty or null values), deserialization is attempted.
-     */
     public ConnectionSettings getConnectionSettings(String key) {
         if (!Settings.store.containsKey(key))
             return null;
@@ -33,10 +28,6 @@ public class SettingsHelper {
         }
     }
 
-    /**
-     * Retrieves ConnectionSettings for the given key, returning a new empty instance if
-     * the key is missing or deserialization fails.
-     */
     public ConnectionSettings getConnectionSettingsOrDefault(String key) {
         ConnectionSettings settings = getConnectionSettings(key);
         return settings != null ? settings : new ConnectionSettings();

@@ -48,8 +48,6 @@ public class NetworkService
 		this.searchRepository = searchRepository;
 	}
 
-
-
 	public String check(String key, ConnectionSettings connectionSettings)
 	{
 		return switch (key) {

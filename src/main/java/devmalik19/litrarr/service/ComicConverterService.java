@@ -19,12 +19,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-/**
- * Converts CBR comic archives to CBZ, so the library only contains one format.
- * <p>
- * Many ".cbr" files are really ZIP files, those are only renamed. Real RAR (and 7z) archives are
- * extracted with the 7-Zip program and packed into a ZIP. Without 7-Zip they are left as they are.
- */
 @Service
 public class ComicConverterService
 {
@@ -41,20 +35,11 @@ public class ComicConverterService
 	private String sevenZipCommand;
 	private boolean sevenZipChecked;
 
-	/**
-	 * @param configuredSevenZip optional path to the 7-Zip program (SEVENZIP_PATH). When empty,
-	 *                           7zz, 7z and 7za are looked up on the PATH.
-	 */
 	public ComicConverterService(@Value("${app.tools.sevenzip:}") String configuredSevenZip)
 	{
 		this.configuredSevenZip = configuredSevenZip;
 	}
 
-	/**
-	 * Converts the file to CBZ if it is a CBR. The original is removed after a successful conversion.
-	 *
-	 * @return the CBZ file, or the original file if it is not a CBR or could not be converted
-	 */
 	public Path toCbz(Path file)
 	{
 		String name = file.getFileName().toString();
@@ -101,9 +86,6 @@ public class ComicConverterService
 		}
 	}
 
-	/**
-	 * Extracts the archive with the 7-Zip program into a temporary folder and packs that folder into a ZIP.
-	 */
 	private void sevenZipToZip(String command, Path archive, Path zip) throws IOException
 	{
 		Path extractDir = Files.createTempDirectory(archive.toAbsolutePath().getParent(), "litrarr-extract-");
@@ -120,14 +102,14 @@ public class ComicConverterService
 
 	private void runSevenZip(String command, Path archive, Path extractDir) throws IOException
 	{
-		// -y: assume yes, -bd: no progress bar, -bso0: no normal output, "--": stop option parsing
+
 		ProcessBuilder builder = new ProcessBuilder(command, "x", "-y", "-bd", "-bso0",
 			"-o" + extractDir.toAbsolutePath(), "--", archive.toAbsolutePath().toString());
 		builder.redirectErrorStream(true);
 		Process process = builder.start();
 		try
 		{
-			// No input: a password prompt ends instead of waiting forever
+
 			process.getOutputStream().close();
 			String output;
 			try (InputStream in = process.getInputStream())
@@ -174,16 +156,10 @@ public class ComicConverterService
 			}
 		}
 
-		// Never replace the original with an empty archive
 		if (added == 0)
 			throw new IOException("no files could be extracted from the archive");
 	}
 
-	/**
-	 * Finds a working 7-Zip program once: the configured path first, then 7zz, 7z and 7za on the PATH.
-	 *
-	 * @return the command, or null if 7-Zip is not available
-	 */
 	private synchronized String findSevenZip()
 	{
 		if (sevenZipChecked)
@@ -231,9 +207,6 @@ public class ComicConverterService
 		}
 	}
 
-	/**
-	 * Normalizes the path of an archive entry and rejects entries that would point outside the archive.
-	 */
 	private String safeEntryName(String name)
 	{
 		if (name == null)

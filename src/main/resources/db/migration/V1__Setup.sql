@@ -24,6 +24,7 @@ CREATE TABLE library (
 	"complete" BOOLEAN NOT NULL DEFAULT 0,
 	"metadata_fetched" BOOLEAN NOT NULL DEFAULT 0,
 	"last_checked" DATE NULL,
+	"monitored" BOOLEAN NOT NULL DEFAULT 1,
 	"parent" INTEGER NULL,
 	CONSTRAINT FK_LIBRARY_ON_PARENT  FOREIGN KEY (parent) REFERENCES library (id)
 );
@@ -38,6 +39,7 @@ CREATE TABLE item (
 	"publisher" VARCHAR(255) NULL,
 	"release_on" DATE NULL,
 	"missing" BOOLEAN NOT NULL DEFAULT 0,
+	"monitored" BOOLEAN NOT NULL DEFAULT 1,
 	"issue_number" INTEGER NULL,
 	"parent" INTEGER NULL,
 	CONSTRAINT FK_ITEM_ON_LIBRARY  FOREIGN KEY (parent) REFERENCES library (id)

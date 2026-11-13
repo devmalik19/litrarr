@@ -293,3 +293,66 @@ input:checked + .slider:before
     font-size: 0.75rem;
     color: #aaa;
 }
+
+/* --- View toggle and list view --- */
+.view-toggle
+{
+	display: flex;
+	gap: 4px;
+}
+.view-button.active
+{
+	background-color: var(--main-color, #4a9eff);
+	color: #fff;
+}
+.list-view
+{
+	display: none;
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 20px;
+}
+body[data-view="list"] .list-view
+{
+	display: table;
+}
+body[data-view="list"] .poster-grid
+{
+	display: none;
+}
+.list-view th, .list-view td
+{
+	padding: 8px 12px;
+	text-align: left;
+	border-bottom: 1px solid #444;
+}
+.list-view .col-monitor, .list-view .col-number
+{
+	width: 1%;
+	white-space: nowrap;
+	text-align: center;
+}
+.list-view .row-title
+{
+	color: inherit;
+	text-decoration: none;
+}
+.list-view a.row-title:hover
+{
+	color: var(--main-color);
+}
+.row-missing .row-title
+{
+	color: #f87171;
+}
+.row-unmonitored, .poster-unmonitored
+{
+	opacity: 0.55;
+}
+.monitor-label
+{
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}

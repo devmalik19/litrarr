@@ -24,10 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Fetches manga metadata from the official MyAnimeList API.
- * Requires a MAL Client ID to be configured, otherwise all requests are skipped.
- */
 @Service
 public class MyAnimeListService
 {
@@ -54,14 +50,9 @@ public class MyAnimeListService
 
 	public void getMetaForItem(Item item)
 	{
-		// Item-level metadata enrichment can be added later
+
 	}
 
-	/**
-	 * Fetches volume information for a manga from MAL and creates Item entries for each volume.
-	 * MAL doesn't expose individual chapters/volumes as separate API resources,
-	 * so we generate Items based on the num_volumes reported by the manga detail endpoint.
-	 */
 	public List<Item> getVolumesForManga(String mangaId, Library parentLibrary)
 	{
 		List<Item> volumes = new ArrayList<>();
@@ -91,7 +82,6 @@ public class MyAnimeListService
 				return volumes;
 			}
 
-			// Parse start_date for the first volume's releaseOn
 			LocalDate startDate = StringHelper.parseDate(root.path("start_date").asText(null));
 
 			for (int i = 1; i <= numVolumes; i++)
@@ -104,7 +94,6 @@ public class MyAnimeListService
 				item.setLibrary(parentLibrary);
 				item.setMissing(true);
 
-				// Only set releaseOn for volume 1 based on the series start date
 				if (i == 1 && startDate != null)
 					item.setReleaseOn(startDate);
 
@@ -156,18 +145,15 @@ public class MyAnimeListService
 				MetadataResult result = new MetadataResult();
 				result.setCategory(Category.MANGA);
 
-				// Capture MAL manga ID as sourceId
 				String malId = manga.path("id").asText(null);
 				if (StringUtils.hasText(malId))
 					result.setSourceId(malId);
 
-				// Title: prefer English alternative, fall back to default
 				String title = manga.path("alternative_titles").path("en").asText(null);
 				if (!StringUtils.hasText(title))
 					title = manga.path("title").asText(null);
 				result.setTitle(title);
 
-				// Author
 				JsonNode authors = manga.path("authors");
 				if (authors.isArray() && !authors.isEmpty())
 				{
@@ -179,12 +165,10 @@ public class MyAnimeListService
 						result.setAuthor(authorName);
 				}
 
-				// Year from start_date (format: "YYYY-MM-DD" or "YYYY")
 				String startDate = manga.path("start_date").asText(null);
 				if (StringUtils.hasText(startDate) && startDate.length() >= 4)
 					result.setYear(startDate.substring(0, 4));
 
-				// Cover image
 				JsonNode mainPicture = manga.path("main_picture");
 				if (!mainPicture.isMissingNode())
 				{

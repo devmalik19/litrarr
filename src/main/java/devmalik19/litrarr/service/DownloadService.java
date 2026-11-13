@@ -27,17 +27,17 @@ public class DownloadService
 
 	private final ItemRepository itemRepository;
 	private final ComicConverterService comicConverterService;
+	private final AudiobookConverterService audiobookConverterService;
 
-	public DownloadService(ItemRepository itemRepository, ComicConverterService comicConverterService)
+	public DownloadService(ItemRepository itemRepository,
+						 ComicConverterService comicConverterService,
+						 AudiobookConverterService audiobookConverterService)
 	{
 		this.itemRepository = itemRepository;
 		this.comicConverterService = comicConverterService;
+		this.audiobookConverterService = audiobookConverterService;
 	}
 
-	/**
-	 * Processes a completed download: finds the file(s) in the download directory
-	 * and moves them to the target library folder.
-	 */
 	public void process(Search search)
 	{
 		try
@@ -56,10 +56,13 @@ public class DownloadService
 				return;
 			}
 
-			// For comics/manga with a linked library, use multi-file import
 			if (isComicOrManga(search) && search.getLibrary() != null)
 			{
 				processComicDownload(search, downloadDir);
+			}
+			else if (search.getCategory() == Category.AUDIOBOOKS && search.getLibrary() != null && search.getLibrary().getPath() != null)
+			{
+				processAudiobookDownload(search, downloadDir);
 			}
 			else
 			{
@@ -72,11 +75,6 @@ public class DownloadService
 		}
 	}
 
-	/**
-	 * Handles multi-file comic/manga downloads.
-	 * Each issue file is moved to {series}/#{issue number, zero padded}/{issue title or #number}.{ext}
-	 * and matched to an existing Item record if possible.
-	 */
 	private void processComicDownload(Search search, Path downloadDir) throws IOException
 	{
 		Library library = search.getLibrary();
@@ -91,19 +89,18 @@ public class DownloadService
 
 		logger.info("Processing {} comic/manga files for '{}'", downloadedFiles.size(), search.getTitle());
 
-		// Get existing metadata items for this library to match against
 		List<Item> metadataItems = itemRepository.findByLibraryAndMissingTrue(library);
 
 		for (Path downloaded : downloadedFiles)
 		{
-			// CBR files are converted to CBZ before they are moved into the library
+
 			Path file = comicConverterService.toCbz(downloaded);
 			String fileName = file.getFileName().toString();
 			Integer issueNumber = IssuePathHelper.parseIssueNumber(StringHelper.extractNumber(fileName));
 
 			if (issueNumber == null)
 			{
-				// No number found, move to library root
+
 				Path target = libraryPath.resolve(fileName);
 				Files.createDirectories(target.getParent());
 				Files.move(file, target, StandardCopyOption.REPLACE_EXISTING);
@@ -111,11 +108,9 @@ public class DownloadService
 				continue;
 			}
 
-			// Try to match to an existing metadata Item, its name is the issue title (or #number)
 			Item matchedItem = findMatchingItem(metadataItems, issueNumber);
 			String title = matchedItem != null ? matchedItem.getName() : null;
 
-			// Move to {series}/#001/{title or #001}.{ext}
 			String extension = StringUtils.getFilenameExtension(fileName);
 			Path target = IssuePathHelper.issueFile(libraryPath, issueNumber, title, extension);
 			Files.createDirectories(target.getParent());
@@ -132,7 +127,7 @@ public class DownloadService
 			}
 			else
 			{
-				// No metadata item exists for this issue — create a new one
+
 				Item newItem = new Item();
 				newItem.setName(target.getFileName().toString());
 				newItem.setIssueNumber(issueNumber);
@@ -145,13 +140,44 @@ public class DownloadService
 			}
 		}
 
-		// Clean up empty download subdirectories
 		cleanEmptyDirectories(downloadDir);
 	}
 
-	/**
-	 * Handles single-file downloads (books, audiobooks, or unlinked searches).
-	 */
+	private void processAudiobookDownload(Search search, Path downloadDir) throws IOException
+	{
+		Library library = search.getLibrary();
+		List<Path> downloaded = AudiobookConverterService.naturalOrder(findDownloadFiles(downloadDir, search.getData().getIdentifier()));
+		if (downloaded.size() < 2)
+		{
+			processSingleFileDownload(search, downloadDir);
+			return;
+		}
+
+		Path libraryPath = Paths.get(library.getPath());
+		Files.createDirectories(libraryPath);
+
+		boolean allConvertible = downloaded.stream().allMatch(AudiobookConverterService::isConvertible);
+		if (allConvertible && audiobookConverterService.isEnabledForDownloads())
+		{
+			Path target = libraryPath.resolve(library.getName() + ".m4b");
+			if (audiobookConverterService.mergeToM4b(downloaded, target, library.getName()))
+			{
+				for (Path file : downloaded)
+					Files.deleteIfExists(file);
+				cleanEmptyDirectories(downloadDir);
+				logger.info("Merged {} audio files into '{}'", downloaded.size(), target);
+				return;
+			}
+		}
+
+		for (Path file : downloaded)
+		{
+			Files.move(file, libraryPath.resolve(file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+			logger.info("Moved '{}' to '{}'", file.getFileName(), libraryPath);
+		}
+		cleanEmptyDirectories(downloadDir);
+	}
+
 	private void processSingleFileDownload(Search search, Path downloadDir) throws IOException
 	{
 		Path file = findFile(findDownloadFiles(downloadDir, search.getData().getIdentifier()), search.getTitle());
@@ -172,18 +198,11 @@ public class DownloadService
 		}
 	}
 
-	/**
-	 * Finds the supported files that belong to this download only.
-	 * The identifier is the release name the download client knows (torrent name, NZB name or,
-	 * for Soulseek, the remote file path). A torrent or NZB is saved in a folder with that name,
-	 * a single file download is saved as a file with that name.
-	 */
 	private List<Path> findDownloadFiles(Path downloadDir, String identifier) throws IOException
 	{
 		if (!StringUtils.hasText(identifier))
 			return List.of();
 
-		// Soulseek identifiers are remote paths, only the file name is relevant
 		String name = identifier.substring(Math.max(identifier.lastIndexOf('/'), identifier.lastIndexOf('\\')) + 1);
 		String nameWithoutNzb = name.replaceAll("(?i)\\.nzb$", "");
 
@@ -205,15 +224,12 @@ public class DownloadService
 			if (partName.equalsIgnoreCase(name) || partName.equalsIgnoreCase(nameWithoutNzb))
 				return true;
 		}
-		// Single file download named after the release without its file extension
+
 		String fileName = relativePath.getFileName().toString();
 		String baseName = StringUtils.stripFilenameExtension(fileName);
 		return baseName.equalsIgnoreCase(name) || baseName.equalsIgnoreCase(nameWithoutNzb);
 	}
 
-	/**
-	 * Matches a downloaded file's issue number against metadata Items.
-	 */
 	private Item findMatchingItem(List<Item> metadataItems, Integer issueNumber)
 	{
 		for (Item item : metadataItems)
@@ -229,9 +245,6 @@ public class DownloadService
 		return search.getCategory() == Category.COMICS || search.getCategory() == Category.MANGA;
 	}
 
-	/**
-	 * Resolves the download path. The downloadPath from DownloadState is the category name.
-	 */
 	private Path resolveDownloadPath(String category)
 	{
 		Path basePath = Paths.get(Constants.DOWNLOAD_PATH);
@@ -244,10 +257,6 @@ public class DownloadService
 		return basePath;
 	}
 
-	/**
-	 * Picks the file matching the search title from the files of this download,
-	 * or the only file if there is just one.
-	 */
 	private Path findFile(List<Path> downloadFiles, String title)
 	{
 		for (Path file : downloadFiles)
@@ -265,9 +274,6 @@ public class DownloadService
 		return FileTypes.isMatch(extension);
 	}
 
-	/**
-	 * Resolves the target path in the library where the file should be moved.
-	 */
 	private Path resolveTargetPath(Search search, Path file)
 	{
 		if (search.getLibrary() == null || search.getLibrary().getPath() == null)
@@ -280,14 +286,11 @@ public class DownloadService
 		return libraryPath.resolve(file.getFileName());
 	}
 
-	/**
-	 * Removes empty directories left behind after moving files.
-	 */
 	private void cleanEmptyDirectories(Path dir)
 	{
 		try (Stream<Path> paths = Files.walk(dir))
 		{
-			paths.sorted((a, b) -> b.getNameCount() - a.getNameCount()) // deepest first
+			paths.sorted((a, b) -> b.getNameCount() - a.getNameCount())
 				.filter(Files::isDirectory)
 				.filter(p -> !p.equals(dir))
 				.forEach(p -> {

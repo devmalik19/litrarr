@@ -4,7 +4,6 @@
 		<div th:fragment="content">
 			<div th:if="${message}" class="flash-message flash-success" th:text="${message}"></div>
 			<div th:if="${error}" class="flash-message flash-error" th:text="${error}"></div>
-
 			<div class="page-header">
 				<h2 th:text="${title}">Library</h2>
 				<div class="page-header-actions">
@@ -12,6 +11,10 @@
 						<input type="hidden" name="sort" th:value="${sort}"/>
 						<input type="text" name="search" id="library-search" class="search-input" placeholder="Search..." th:value="${search}" />
 					</form>
+					<div class="view-toggle" role="group" aria-label="View mode">
+						<button type="button" class="button view-button" data-view="grid" onclick="setViewMode('grid')" title="Poster view" aria-label="Poster view">&#9638;</button>
+						<button type="button" class="button view-button" data-view="list" onclick="setViewMode('list')" title="List view" aria-label="List view">&#9776;</button>
+					</div>
 					<select class="sort-select" onchange="window.location.href=this.value">
 						<option th:value="${'?sort=name' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'name'}">Sort: Alphabetical</option>
 						<option th:value="${'?sort=directory' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'directory'}">Sort: Directory</option>
@@ -21,19 +24,35 @@
 					</form>
 				</div>
 			</div>
-
 			<div class="poster-grid">
-
-				<a class="poster" th:each="item: ${library}" th:href="@{/library/view/{id}(id=${item.id})}">
+				<a class="poster" th:each="item: ${library}" th:classappend="${item.monitored} ? '' : 'poster-unmonitored'" th:href="@{/library/view/{id}(id=${item.id})}">
 					<div class="poster-image" th:style="|background-image: url('@{${@imageHelper.getPath(item.image)}}');|">
 					</div>
 					<div class="poster-details">
 						<span class="poster-title" th:text="${item.name}">Item Name</span>
 					</div>
 				</a>
-
 			</div>
-
+			<table class="list-view">
+				<thead>
+					<tr>
+						<th class="col-monitor">Monitored</th>
+						<th>Title</th>
+						<th>Author</th>
+						<th>Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="item: ${library}" th:classappend="${item.monitored} ? '' : 'row-unmonitored'">
+						<td class="col-monitor">
+							<input type="checkbox" th:checked="${item.monitored}" th:data-url="@{/library/monitor/{id}(id=${item.id})}" onchange="toggleMonitor(this)" aria-label="Monitored"/>
+						</td>
+						<td><a class="row-title" th:href="@{/library/view/{id}(id=${item.id})}" th:text="${item.name}">Name</a></td>
+						<td th:text="${item.author}">Author</td>
+						<td th:text="${item.category != null and (item.category.name() == 'COMICS' or item.category.name() == 'MANGA')} ? (${item.complete} ? 'Complete' : 'Ongoing') : ''">Ongoing</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 	</body>
 </html>

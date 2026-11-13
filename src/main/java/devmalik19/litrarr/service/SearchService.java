@@ -80,22 +80,16 @@ public class SearchService
 		networkService.addToDownloadClients(downloadRequest);
 	}
 
-	/**
-	 * Prepares a search for the missing files of a library entry.
-	 * Comics and manga: needs at least one missing issue/volume item.
-	 * Books and audiobooks: needs a library entry that has no file yet.
-	 * Reuses the library's previous search entry so the history does not fill up.
-	 *
-	 * @return the search to run, or null when there is nothing missing or a search is already running
-	 */
 	public Search prepareMissingSearch(Integer libraryId)
 	{
 		Library library = libraryRepository.findById(libraryId).orElseThrow();
+		if (!library.isMonitored())
+			return null;
 		Category category = library.getCategory();
 
 		boolean hasMissing;
 		if (category == Category.COMICS || category == Category.MANGA)
-			hasMissing = !itemRepository.findByLibraryAndMissingTrue(library).isEmpty();
+			hasMissing = !itemRepository.findByLibraryAndMissingTrueAndMonitoredTrue(library).isEmpty();
 		else
 			hasMissing = itemRepository.findByLibrary(library).stream().noneMatch(item -> !item.isMissing());
 		if (!hasMissing)

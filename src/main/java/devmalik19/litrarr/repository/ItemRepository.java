@@ -8,11 +8,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ItemRepository extends JpaRepository<Item, String>
+public interface ItemRepository extends JpaRepository<Item, Integer>
 {
 	Optional<Item> findByPath(String path);
 
 	List<Item> findByLibrary(Library library);
 
 	List<Item> findByLibraryAndMissingTrue(Library library);
+	List<Item> findByLibraryAndMissingTrueAndMonitoredTrue(Library library);
 }

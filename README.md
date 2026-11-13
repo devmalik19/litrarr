@@ -22,9 +22,10 @@ One stop solution to all your literature needs.
 - **qBittorrent**: torrent download client
 - **SABnzbd**: usenet download client
 - **Slskd**: P2P (Soulseek) search and download
-- **Google Books API**: book metadata
+- **Hardcover**: book metadata (API token required)
 - **ComicVine**: comic metadata
-- **MyAnimeList** (falls back to Jikan): manga metadata
+- **Audnexus**: audiobook metadata (Audible data, no key needed)
+- **MyAnimeList**: manga metadata (client ID required, manga metadata is skipped without it)
 
 ## Supported file types
 
@@ -50,8 +51,10 @@ audiobooks/<author>/<book>/<file>
 
 Downloaded comics and manga are moved into this layout automatically. Issue numbers are whole numbers padded to three digits (`#001`).
 
-Downloaded `CBR` files are converted to `CBZ` with [7-Zip](https://www.7-zip.org/), which is already included in the Docker image. For local development install it and make sure `7zz`, `7z` or `7za` is on your PATH, or set `SEVENZIP_PATH`. Without 7-Zip, real RAR files stay as `CBR` (CBR files that are really ZIP files are still renamed). Files already in your library are not converted.
+Downloaded `CBR` files are converted to `CBZ` with [7-Zip](https://www.7-zip.org/), which is already included in the Docker image. For local development install it and make sure `7zz`, `7z` or `7za` is on your PATH, or set `SEVENZIP_PATH`. Without 7-Zip, real RAR files stay as `CBR` (CBR files that are really ZIP files are still renamed). Files already in your library are converted when you press **Convert** under Settings, General.
 
+## Audiobooks
+An audiobook download with several `MP3`, `FLAC` or `OGG` files is merged into one `M4B` named after the book, with one chapter per file. Files are merged in natural order (`2` before `10`) and re-encoded to AAC at 64 kbps. This needs [ffmpeg](https://ffmpeg.org/), which is already included in the Docker image. For local development install it and make sure `ffmpeg` and `ffprobe` are on your PATH, or set `FFMPEG_PATH`. Without ffmpeg, or when `CONVERT_AUDIOBOOKS=false`, the files are moved into the book folder unchanged. Existing multi-file audiobooks are merged when you press **Convert** under Settings, General.
 ## Docker
 
 Images are published to `ghcr.io/devmalik19/litrarr:latest`.
@@ -105,10 +108,12 @@ All settings are environment variables. Everything is optional.
 | `CONFIG_PATH`          | `/config`    | Database and cache folder.                                                           |
 | `LIBRARY_PATH`         | `/library`   | Root of your library.                                                                |
 | `DOWNLOAD_PATH`        | `/downloads` | Download client folder.                                                              |
-| `GOOGLE_BOOKS_API_KEY` | empty        | Google Books API key for metadata search.                                            |
+| `HARDCOVER_API_KEY`    | empty        | Hardcover API token for book metadata.                                               |
 | `COMIC_VINE_API_KEY`   | empty        | ComicVine API key for comic metadata.                                                |
-| `MYANIMELIST_API_KEY`  | empty        | MyAnimeList client ID for manga metadata. Falls back to Jikan if not set.            |
+| `MYANIMELIST_API_KEY`  | empty        | MyAnimeList client ID for manga metadata. Manga search is disabled if not set.      |
 | `SEVENZIP_PATH`        | empty        | Path to the 7-Zip program. Empty: `7zz`, `7z` and `7za` are looked up on the PATH.   |
+| `FFMPEG_PATH`          | empty        | Path to ffmpeg. Empty: `ffmpeg` and `ffprobe` are looked up on the PATH.             |
+| `CONVERT_AUDIOBOOKS`   | `true`       | Merge multi-file audiobook downloads into one M4B. Set `false` to keep the files.    |
 | `USER_AGENT`           | `Litrarr/1.0`| User agent sent to external services.                                                |
 | `LOGGING_LEVEL`        | `INFO`       | Root log level, for example `DEBUG`.                                                 |
 
@@ -176,4 +181,4 @@ Litrarr uses SQLite and Flyway. Migrations are in `src/main/resources/db/migrati
 ### Good to have
 
 1. File icons and design
-2. Finish ComicVine and MyAnimeList metadata integration
+2. Finish ComicVine, Hardcover and MyAnimeList metadata integration

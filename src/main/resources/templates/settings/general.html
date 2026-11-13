@@ -2,6 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 	<body th:replace="~{layouts/layout :: base('General')}">
 		<div th:fragment="content">
+			<div th:if="${message}" class="flash-message flash-success" th:text="${message}"></div>
+			<div th:if="${error}" class="flash-message flash-error" th:text="${error}"></div>
 			<h2>General Settings</h2>
 
 			<form th:action="@{/settings/save/library}" method="post">
@@ -44,6 +46,11 @@
 				<button type="submit">Save</button>
 			</form>
 
+			<h2>Convert Existing Files</h2>
+			<form th:action="@{/settings/convert}" method="post">
+				<p>Converts CBR comics in your library to CBZ and merges multi-file audiobooks into a single M4B with chapters. The original files are removed once the conversion works. Audiobooks need ffmpeg, comics need 7-Zip for real RAR files.</p>
+				<button type="submit">Convert</button>
+			</form>
 			<th:block th:replace="~{fragments/jquery :: sortable}"></th:block>
 
 		</div>

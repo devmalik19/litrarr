@@ -10,12 +10,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Profiles;
 
-/**
- * Creates the config, downloads and library folders and empty sample files for local development.
- * Only active with the "dev" profile (spring.profiles.active=dev in .env), never in Docker/production.
- * Registered in {@code App.main}. It runs before any bean exists because SQLite needs the
- * config folder to exist when the datasource connects.
- */
 public class DevSetup implements ApplicationListener<ApplicationEnvironmentPreparedEvent>
 {
 	private static final List<String> SAMPLE_LIBRARY_FILES = List.of(

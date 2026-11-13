@@ -2,10 +2,6 @@ package devmalik19.litrarr.helper;
 
 import java.util.Comparator;
 
-/**
- * Provides a natural-order comparator for strings containing numeric segments.
- * Sorts "1, 2, 10, 20" instead of the lexicographic "1, 10, 2, 20".
- */
 public class SortingHelper
 {
 	private static final Comparator<String> COMPARATOR = SortingHelper::compare;

@@ -15,5 +15,4 @@ public enum Protocol
         return USENET.name().equalsIgnoreCase(value);
     }
 
-
 }

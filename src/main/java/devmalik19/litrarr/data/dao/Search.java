@@ -1,6 +1,5 @@
 package devmalik19.litrarr.data.dao;
 
-
 import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.constants.SearchStatus;
 import devmalik19.litrarr.data.dto.DownloadState;

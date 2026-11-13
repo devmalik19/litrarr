@@ -15,7 +15,8 @@ public class CacheConfig
 	{
 		CaffeineCacheManager cacheManager = new CaffeineCacheManager(
 			"ProwlarrSearchResult",
-			"GoogleBooksMetadata",
+			"HardcoverMetadata",
+			"AudnexusMetadata",
 			"ComicVineMetadata",
 			"MyAnimeListMetadata"
 		);

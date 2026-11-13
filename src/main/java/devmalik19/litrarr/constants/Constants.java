@@ -38,7 +38,6 @@ public class Constants
 		LIBRARY_PATH = path;
 	}
 
-
 	@Value("${app.user-agent}")
 	public void setUserAgent(String key)
 	{

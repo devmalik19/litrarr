@@ -28,31 +28,30 @@ public class MetaDataService
 	private static final Logger logger = LoggerFactory.getLogger(MetaDataService.class);
 
 	private final ComicVineService comicVineService;
-	private final GoogleBookService googleBookService;
+	private final HardcoverService hardcoverService;
+	private final AudnexusService audnexusService;
 	private final MyAnimeListService myAnimeListService;
 	private final FileSystemService fileSystemService;
 	private final LibraryRepository libraryRepository;
 	private final ItemRepository itemRepository;
 
 	public MetaDataService(ComicVineService comicVineService,
-						   GoogleBookService googleBookService,
+						   HardcoverService hardcoverService,
+						   AudnexusService audnexusService,
 						   MyAnimeListService myAnimeListService,
 						   FileSystemService fileSystemService,
 						   LibraryRepository libraryRepository,
 						   ItemRepository itemRepository)
 	{
 		this.comicVineService = comicVineService;
-		this.googleBookService = googleBookService;
+		this.hardcoverService = hardcoverService;
+		this.audnexusService = audnexusService;
 		this.myAnimeListService = myAnimeListService;
 		this.fileSystemService = fileSystemService;
 		this.libraryRepository = libraryRepository;
 		this.itemRepository = itemRepository;
 	}
 
-/**
- * Picks up a cover image placed in the folder (for example folder.jpg).
- * Provider metadata is never guessed here, it is linked when a result is added to the library.
- */
 public void getMetaForLibrary(Library library, Path file)
 {
 Path imagePath = fileSystemService.findLibraryImage(file);
@@ -70,11 +69,6 @@ libraryRepository.save(library);
 	{
 	}
 
-	/**
-	 * Fetches the current issues/volumes of a comic/manga series from its provider,
-	 * using the provider ID stored in {@link Library#getGuid()}.
-	 * Returns an empty list when the provider is not configured, fails or has no data.
-	 */
 	public List<Item> fetchIssues(Library library)
 	{
 		if (!StringUtils.hasText(library.getGuid()))
@@ -87,13 +81,6 @@ libraryRepository.save(library);
 		};
 	}
 
-/**
- * Merges the issues/volumes returned by the provider into the items of a series.
- * Items that already exist (from scanned files or an earlier fetch) are matched by issue number
- * and only get the provider ID and release date filled in. Everything else is saved as a missing item.
- *
- * @return the newly created items
- */
 public List<Item> syncIssues(Library library, List<Item> fetched)
 {
 Map<Integer, Item> byNumber = new HashMap<>();
@@ -155,20 +142,13 @@ return newItems;
 		return PaginationHelper.prepareResults(metadataResult, pageable);
 	}
 
-	/**
-	 * Searches the provider matching the category.
-	 * Books and audiobooks both use Google Books; results are tagged with the requested category.
-	 */
 	private List<MetadataResult> searchAll(String query, Category category)
 	{
 		List<MetadataResult> results = new ArrayList<>();
 		switch (category)
 		{
-			case BOOKS, AUDIOBOOKS ->
-			{
-				tryAddResults(results, () -> googleBookService.search(query));
-				results.forEach(r -> r.setCategory(category));
-			}
+			case BOOKS -> tryAddResults(results, () -> hardcoverService.search(query));
+			case AUDIOBOOKS -> tryAddResults(results, () -> audnexusService.search(query));
 			case COMICS -> tryAddResults(results, () -> comicVineService.search(query));
 			case MANGA -> tryAddResults(results, () -> myAnimeListService.search(query));
 		}

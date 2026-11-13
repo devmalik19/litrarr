@@ -3,6 +3,7 @@ package devmalik19.litrarr.controller;
 import devmalik19.litrarr.constants.Keys;
 import devmalik19.litrarr.constants.Category;
 import devmalik19.litrarr.service.IndexService;
+import devmalik19.litrarr.service.LibraryConversionService;
 import devmalik19.litrarr.service.LibraryService;
 import devmalik19.litrarr.service.SettingsService;
 import devmalik19.litrarr.data.dto.ConnectionSettings;
@@ -11,6 +12,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
@@ -18,11 +20,13 @@ public class SettingsController
 {
 	private final SettingsService settingsService;
 	private final IndexService indexService;
+	private final LibraryConversionService libraryConversionService;
 
-	public SettingsController(SettingsService settingsService, IndexService indexService)
+	public SettingsController(SettingsService settingsService, IndexService indexService, LibraryConversionService libraryConversionService)
 	{
 		this.settingsService = settingsService;
 		this.indexService = indexService;
+		this.libraryConversionService = libraryConversionService;
 	}
 
 	@GetMapping("settings")
@@ -42,6 +46,21 @@ public class SettingsController
 		model.addAttribute("audiobooks", library.get(Category.AUDIOBOOKS));
 
 		return "settings/general";
+	}
+
+	@PostMapping("/settings/convert")
+	public String convertExisting(RedirectAttributes redirectAttributes)
+	{
+		if (libraryConversionService.tryStart())
+		{
+			libraryConversionService.convertExisting();
+			redirectAttributes.addFlashAttribute("message", "Conversion started. Progress is written to the log.");
+		}
+		else
+		{
+			redirectAttributes.addFlashAttribute("error", "A conversion is already running.");
+		}
+		return "redirect:/settings";
 	}
 
 	@GetMapping("settings/indexes")

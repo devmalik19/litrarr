@@ -47,13 +47,9 @@ public class ComicVineService
 
 	public void getMetaForItem(Item item)
 	{
-		// Item-level metadata enrichment can be added later
+
 	}
 
-	/**
-	 * Fetches all issues for a given ComicVine volume and returns them as Item entities
-	 * linked to the provided parent library.
-	 */
 	public List<Item> getIssuesForVolume(String volumeId, Library parentLibrary)
 	{
 		List<Item> issues = new ArrayList<>();
@@ -64,7 +60,7 @@ public class ComicVineService
 
 		try
 		{
-			// The issues endpoint returns at most 100 issues per call, so page through them
+
 			int offset = 0;
 			int total = Integer.MAX_VALUE;
 			while (offset < total)
@@ -92,7 +88,6 @@ public class ComicVineService
 		return issues;
 	}
 
-	/** Returns one page of issues, or null when the API did not return a usable response. */
 	private JsonNode fetchIssuesPage(String apiKey, String volumeId, int offset) throws Exception
 	{
 		URI uri = UriComponentsBuilder.fromUriString(BASE_URL + "/issues/")
@@ -136,7 +131,6 @@ public class ComicVineService
 		return item;
 	}
 
-	/** ComicVine uses 00 for an unknown day or month, for example 2015-03-00. */
 	private LocalDate parseCoverDate(String coverDate)
 	{
 		if (!StringUtils.hasText(coverDate))
@@ -200,7 +194,6 @@ public class ComicVineService
 				result.setCategory(Category.COMICS);
 				result.setTitle(item.path("name").asText(null));
 
-				// Capture the volume ID as sourceId for fetching issues later
 				String id = item.path("id").asText(null);
 				if (StringUtils.hasText(id))
 					result.setSourceId(id);
@@ -217,7 +210,6 @@ public class ComicVineService
 						result.setPublisher(publisherName);
 				}
 
-				// Try to get a person (writer) from the people credits
 				JsonNode people = item.path("people");
 				if (people != null && people.isArray() && !people.isEmpty())
 				{

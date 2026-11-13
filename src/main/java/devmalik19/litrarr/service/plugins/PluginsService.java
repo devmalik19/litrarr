@@ -36,7 +36,6 @@ public class PluginsService
 			.collect(Collectors.toMap(PluginHandler::getPendingServiceName, Function.identity()));
 	}
 
-	/** All registered plugin service names (for priority configuration) */
 	public List<String> getServiceNames()
 	{
 		return handlers.stream().map(PluginHandler::getServiceName).toList();
@@ -58,9 +57,6 @@ public class PluginsService
 		return settings;
 	}
 
-	/**
-	 * Tries each registered plugin in order until one successfully submits a search.
-	 */
 	public boolean search(Search search, Set<String> blocklist) throws Exception
 	{
 		for (PluginHandler handler : handlers)
@@ -79,9 +75,6 @@ public class PluginsService
 		return search(search, Collections.emptySet());
 	}
 
-	/**
-	 * Routes download checks to the correct plugin based on the service name in DownloadState.
-	 */
 	public void checkDownloads(Search search) throws Exception
 	{
 		checkDownloads(search, Collections.emptySet());

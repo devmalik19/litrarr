@@ -101,6 +101,36 @@ public class LibraryController
 		}
 	}
 
+	@PostMapping("/monitor/{id}")
+	@ResponseBody
+	public ResponseEntity<String> setMonitored(@PathVariable("id") Integer id,
+											   @RequestParam("monitored") boolean monitored)
+	{
+		try
+		{
+			libraryService.setMonitored(id, monitored);
+			return ResponseEntity.ok("");
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.internalServerError().body(e.getMessage());
+		}
+	}
+	@PostMapping("/item/monitor/{id}")
+	@ResponseBody
+	public ResponseEntity<String> setItemMonitored(@PathVariable("id") Integer id,
+												   @RequestParam("monitored") boolean monitored)
+	{
+		try
+		{
+			libraryService.setItemMonitored(id, monitored);
+			return ResponseEntity.ok("");
+		}
+		catch (Exception e)
+		{
+			return ResponseEntity.internalServerError().body(e.getMessage());
+		}
+	}
 	@PostMapping("/search-missing/{id}")
 	@ResponseBody
 	public ResponseEntity<String> searchMissing(@PathVariable("id") Integer id)

@@ -8,19 +8,11 @@ import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Shared utility for reading the priority settings from the in-memory store.
- * Eliminates duplicate priority-deserialization logic across services.
- */
 public class PriorityHelper
 {
 	private static final Logger logger = LoggerFactory.getLogger(PriorityHelper.class);
 	private static final ObjectMapper objectMapper = new ObjectMapper();
 
-	/**
-	 * Reads the priority map from Settings.store.
-	 * Returns an empty map if parsing fails or no priority is configured.
-	 */
 	public static HashMap<String, Integer> getPriority()
 	{
 		try

@@ -6,9 +6,7 @@ import java.util.Map;
 
 public class HttpHelper
 {
-	/**
-	 * Returns standard JSON API headers (Accept + User-Agent).
-	 */
+
 	public static Map<String, String> jsonApiHeaders()
 	{
 		Map<String, String> headers = new HashMap<>();
@@ -17,10 +15,6 @@ public class HttpHelper
 		return headers;
 	}
 
-	/**
-	 * Returns standard JSON API headers with additional custom entries.
-	 * Pass key-value pairs as alternating strings: key1, value1, key2, value2, ...
-	 */
 	public static Map<String, String> jsonApiHeaders(String... extra)
 	{
 		Map<String, String> headers = jsonApiHeaders();

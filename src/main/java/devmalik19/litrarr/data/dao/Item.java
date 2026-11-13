@@ -33,7 +33,9 @@ public class Item
 	@Column(nullable = false)
 	private boolean missing = false;
 
-	/** Issue (comics) or volume (manga) number. Null for books and audiobooks. */
+	@Column(nullable = false)
+	private boolean monitored = true;
+
 	private Integer issueNumber;
 
 	@ManyToOne

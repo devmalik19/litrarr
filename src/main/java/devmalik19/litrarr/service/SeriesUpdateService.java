@@ -15,18 +15,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-/**
- * Checks ongoing comic and manga series for newly released issues/volumes
- * and starts a search for them.
- */
 @Service
 public class SeriesUpdateService
 {
 	private static final Logger logger = LoggerFactory.getLogger(SeriesUpdateService.class);
 
-	/** Days between checks of an ongoing series */
 	private static final int CHECK_INTERVAL_DAYS = 7;
-	/** Pause between provider calls, the providers rate limit */
+
 	private static final long PROVIDER_DELAY_MS = 1000;
 
 	private final LibraryRepository libraryRepository;
@@ -74,7 +69,6 @@ public class SeriesUpdateService
 		logger.info("Series check finished, {} series checked", checked);
 	}
 
-	/** A series is due when it is ongoing, has a provider ID and was not checked in the last week. */
 	private boolean isDue(Library library, LocalDate today)
 	{
 		if (library.isComplete() || !StringUtils.hasText(library.getGuid()))
@@ -89,7 +83,7 @@ public class SeriesUpdateService
 		List<Item> fetched = metaDataService.fetchIssues(library);
 		if (fetched.isEmpty())
 		{
-			// Provider not configured or failed, try again on the next run
+
 			logger.debug("No issues returned for '{}'", library.getName());
 			return;
 		}

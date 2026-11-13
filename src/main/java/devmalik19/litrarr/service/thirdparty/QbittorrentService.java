@@ -65,7 +65,7 @@ public class QbittorrentService
 			if ("Fails.".equalsIgnoreCase(response) || response == null || response.isBlank())
 			{
 				logger.error("qBittorrent rejected the torrent URL: {}", url);
-				return downloadState; // returns empty state → treated as not found
+				return downloadState;
 			}
 
 			downloadState.setDownloadPath(connectionSettings.getCategory());

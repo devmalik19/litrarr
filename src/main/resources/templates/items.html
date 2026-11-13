@@ -7,6 +7,9 @@
 
 			<div class="page-header">
 				<h2 th:text="${library.name}">Library Name</h2>
+				<label class="monitor-label" th:if="${library.id != null}">
+					<input type="checkbox" th:checked="${library.monitored}" th:data-url="@{/library/monitor/{id}(id=${library.id})}" onchange="toggleMonitor(this)"/> Monitored
+				</label>
 				<th:block th:if="${library.type != null and library.type.name() == 'TITLE' and (library.category.name() == 'COMICS' or library.category.name() == 'MANGA')}">
 					<span class="poster-badge" th:text="${library.complete} ? 'Complete' : 'Ongoing'">Ongoing</span>
 					<button type="button" class="button"
@@ -20,6 +23,10 @@
 						<input type="hidden" name="sort" th:value="${sort}"/>
 						<input type="text" name="search" id="library-search" class="search-input" placeholder="Search..." th:value="${search}" />
 					</form>
+					<div class="view-toggle" role="group" aria-label="View mode">
+						<button type="button" class="button view-button" data-view="grid" onclick="setViewMode('grid')" title="Poster view" aria-label="Poster view">&#9638;</button>
+						<button type="button" class="button view-button" data-view="list" onclick="setViewMode('list')" title="List view" aria-label="List view">&#9776;</button>
+					</div>
 					<select class="sort-select" onchange="window.location.href=this.value">
 						<option th:value="${'/library/view/' + library.id + '?sort=name' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'name'}">Sort: Alphabetical</option>
 						<option th:value="${'/library/view/' + library.id + '?sort=directory' + (search != '' ? '&search=' + search : '')}" th:selected="${sort == 'directory'}">Sort: Directory</option>
@@ -47,7 +54,7 @@
 			</div>
 
 			<div class="poster-grid">
-				<div class="poster" th:each="item: ${items}" th:classappend="${item.missing} ? ' poster-missing' : ''">
+				<div class="poster" th:each="item: ${items}" th:classappend="${(item.missing ? ' poster-missing' : '') + (item.monitored ? '' : ' poster-unmonitored')}">
 					<div class="poster-image" th:style="'background-image: url(' + @{/images/default.png} + ');'"></div>
 					<div class="poster-details">
 						<span class="poster-title" th:text="'📄 ' + ${item.name}">File Name</span>
@@ -57,6 +64,35 @@
 				</div>
 			</div>
 
+			<table class="list-view">
+				<thead>
+					<tr>
+						<th class="col-monitor">Monitored</th>
+						<th class="col-number">#</th>
+						<th>Title</th>
+						<th>Status</th>
+						<th>Release Date</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="folder: ${libraries}">
+						<td class="col-monitor"></td>
+						<td class="col-number"></td>
+						<td><a class="row-title" th:href="@{/library/view/{id}(id=${folder.id})}" th:text="'📁 ' + ${folder.name}">Folder</a></td>
+						<td></td>
+						<td></td>
+					</tr>
+					<tr th:each="item: ${items}" th:classappend="${(item.missing ? ' row-missing' : '') + (item.monitored ? '' : ' row-unmonitored')}">
+						<td class="col-monitor">
+							<input type="checkbox" th:checked="${item.monitored}" th:data-url="@{/library/item/monitor/{id}(id=${item.id})}" onchange="toggleMonitor(this)" aria-label="Monitored"/>
+						</td>
+						<td class="col-number" th:text="${item.issueNumber}">1</td>
+						<td class="row-title" th:text="${item.name}">Title</td>
+						<td><span th:if="${item.missing}" class="missing-badge">Missing</span><span th:unless="${item.missing}">Downloaded</span></td>
+						<td th:text="${item.releaseOn != null} ? ${#temporals.format(item.releaseOn, 'dd MMM yyyy')} : ''">01 Jan 2020</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 	</body>
 </html>

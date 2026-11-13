@@ -168,7 +168,6 @@ public class LibraryService
 				Library parentLibrary = (parentPath != null && savedDirectories.containsKey(parentPath))
 					? savedDirectories.get(parentPath) : null;
 
-				// For COMICS/MANGA the issue number comes from the issue folder (#001)
 				Item item = itemRepository.findByPath(path.toString()).orElse(null);
 				Integer issueNumber = null;
 				if (parentLibrary != null && parentLibrary.getType() == FolderType.ISSUE_NUMBER
@@ -177,7 +176,6 @@ public class LibraryService
 					issueNumber = IssuePathHelper.parseIssueNumber(StringHelper.extractNumber(parentLibrary.getName()));
 				}
 
-				// Try to match against existing metadata-created items of the series
 				if (item == null && issueNumber != null && parentLibrary.getLibrary() != null)
 				{
 					item = findMatchingMetadataItem(parentLibrary.getLibrary(), issueNumber);
@@ -212,10 +210,6 @@ public class LibraryService
 			.toList();
 	}
 
-	/**
-	 * Tries to find an existing metadata-created Item (missing, no path) in the given series
-	 * library with the same issue/volume number.
-	 */
 	private Item findMatchingMetadataItem(Library series, Integer issueNumber)
 	{
 		List<Item> metadataItems = itemRepository.findByLibraryAndMissingTrue(series);
@@ -228,12 +222,6 @@ public class LibraryService
 		return null;
 	}
 
-	/**
-	 * Adds a metadata search result to the library and links it to what is already on disk.
-	 * An existing folder with a similar name is reused, a new one is created in the library layout otherwise.
-	 * The library record gets the result's metadata and cover and, for comics and manga, its issues/volumes:
-	 * issues with a file in the folder keep it, the rest are saved as missing items.
-	 */
 	public Library addToLibrary(MetadataResult result) throws Exception
 	{
 		Category category = result.getCategory();
@@ -278,7 +266,7 @@ public class LibraryService
 
 		if (category == Category.COMICS || category == Category.MANGA)
 		{
-			// Files already in the folder keep their path, the rest of the issues become missing items
+
 			List<Item> issues = metaDataService.fetchIssues(library);
 			metaDataService.syncIssues(library, issues);
 			library.setLastChecked(LocalDate.now());
@@ -287,12 +275,6 @@ public class LibraryService
 		return library;
 	}
 
-	/**
-	 * Finds the folder for a metadata result before creating a new one, in this order:
-	 * a library record with the same path, a library record with a similar name (for example
-	 * "Spider-Man (2019)" for "Spider-Man"), a folder on disk with a similar name that was not scanned yet.
-	 * Only when none exists the folder is created.
-	 */
 	private Library findOrCreateFolder(Path parent, String name, Category category, FolderType type, Library parentLibrary) throws Exception
 	{
 		Path path = parent.resolve(safeFolderName(name)).toAbsolutePath().normalize();
@@ -394,7 +376,7 @@ public class LibraryService
 				.filter(item -> item.getName().toLowerCase().contains(search.toLowerCase()))
 				.toList());
 		}
-		// Issues/volumes in numeric order, items without a number (books) by name
+
 		items.sort(Comparator
 			.comparing(Item::getIssueNumber, Comparator.nullsLast(Comparator.naturalOrder()))
 			.thenComparing(Item::getName, Comparator.nullsLast(SortingHelper.naturalOrder())));
@@ -409,6 +391,20 @@ public class LibraryService
 		libraryRepository.save(library);
 	}
 
+	public void setMonitored(Integer id, boolean monitored)
+	{
+		Library library = libraryRepository.findById(id)
+			.orElseThrow(() -> new EntityNotFoundException("Library not found: " + id));
+		library.setMonitored(monitored);
+		libraryRepository.save(library);
+	}
+	public void setItemMonitored(Integer id, boolean monitored)
+	{
+		Item item = itemRepository.findById(id)
+			.orElseThrow(() -> new EntityNotFoundException("Item not found: " + id));
+		item.setMonitored(monitored);
+		itemRepository.save(item);
+	}
 	public Library findById(Integer id)
 	{
 		return libraryRepository.findById(id).orElse(new Library());

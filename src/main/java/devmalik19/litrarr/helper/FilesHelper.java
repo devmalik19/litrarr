@@ -17,13 +17,10 @@ public class FilesHelper
 
 		logger.debug("Matching {} - {}", s1, s2);
 
-		// Compare against the shorter length to avoid penalizing long torrent/usenet filenames
-		// that contain extra metadata (resolution, codec, release group, etc.)
 		int distance = levenshtein.apply(s1, s2);
 		int minLen = Math.min(s1.length(), s2.length());
 		double similarity = (minLen == 0) ? 0.0 : (1.0 - (double) distance / Math.max(s1.length(), s2.length()));
 
-		// Also check if all words from the search term appear in the filename
 		String[] terms = s1.split("\\s+");
 		long matchedTerms = java.util.Arrays.stream(terms)
 			.filter(t -> !t.isEmpty())

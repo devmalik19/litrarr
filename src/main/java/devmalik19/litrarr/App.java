@@ -16,7 +16,7 @@ public class App
 	public static void main(String[] args)
 	{
 		SpringApplication application = new SpringApplication(App.class);
-		// Runs before the datasource connects. Does nothing unless the "dev" profile is active.
+
 		application.addListeners(new DevSetup());
 		application.run(args);
 	}

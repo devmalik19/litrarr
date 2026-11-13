@@ -35,8 +35,11 @@ app:
     tools:
         # Optional path to the 7-Zip program. Empty: look for 7zz, 7z and 7za on the PATH.
         sevenzip: ${SEVENZIP_PATH:}
+        ffmpeg: ${FFMPEG_PATH:}
+    convert:
+        audiobooks: ${CONVERT_AUDIOBOOKS:true}
     api-keys:
-        google-books: ${GOOGLE_BOOKS_API_KEY:}
+        hardcover: ${HARDCOVER_API_KEY:}
         comic-vine: ${COMIC_VINE_API_KEY:}
         mal-client-id: ${MYANIMELIST_API_KEY:}
 

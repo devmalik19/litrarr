@@ -98,10 +98,6 @@ public class FileSystemService
 				.toList();
 	}
 
-	/**
-	 * Downloads an image from a URL and saves it to the cache directory.
-	 * Returns the filename if successful, null otherwise.
-	 */
 	public String downloadImageToCache(String imageUrl, String location, String baseName)
 	{
 		if (!StringUtils.hasText(imageUrl))
@@ -145,14 +141,13 @@ public class FileSystemService
 
 	private String guessImageExtension(String url, HttpResponse<?> response)
 	{
-		// Try content-type header first
+
 		String contentType = response.headers().firstValue("content-type").orElse("");
 		if (contentType.contains("png")) return ".png";
 		if (contentType.contains("gif")) return ".gif";
 		if (contentType.contains("webp")) return ".webp";
 		if (contentType.contains("jpeg") || contentType.contains("jpg")) return ".jpg";
 
-		// Fall back to URL extension
 		String path = url.toLowerCase();
 		if (path.contains(".png")) return ".png";
 		if (path.contains(".gif")) return ".gif";

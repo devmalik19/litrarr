@@ -1,7 +1,3 @@
-/**
- *  This class is to make HTTP requests (GET, POST) using spring boot RESTClient library.
- *  Includes rate limiting and retry with exponential backoff to avoid 429/503 errors.
- */
 package devmalik19.litrarr.service;
 
 import java.net.URI;
@@ -28,7 +24,7 @@ public class HttpRequestService
 
 	private static final int MAX_RETRIES = 3;
 	private static final long INITIAL_BACKOFF_MS = 1000;
-	private static final long MIN_REQUEST_INTERVAL_MS = 1100; // ~1 req/s to respect API limits
+	private static final long MIN_REQUEST_INTERVAL_MS = 1100;
 
 	private final RestClient restClient;
 	private final ReentrantLock rateLimitLock = new ReentrantLock();
@@ -45,9 +41,6 @@ public class HttpRequestService
 			.build();
 	}
 
-	/**
-	 * Enforces a minimum interval between outgoing requests to avoid rate limiting.
-	 */
 	private void throttle()
 	{
 		rateLimitLock.lock();
@@ -73,9 +66,6 @@ public class HttpRequestService
 		}
 	}
 
-	/**
-	 * Executes a request with retry and exponential backoff on 429/503 responses.
-	 */
 	private ResponseEntity<String> executeWithRetry(Supplier<ResponseEntity<String>> requestSupplier)
 	{
 		long backoff = INITIAL_BACKOFF_MS;
@@ -103,7 +93,7 @@ public class HttpRequestService
 				}
 			}
 		}
-		return null; // unreachable
+		return null;
 	}
 
 	private void sleep(long ms)
@@ -118,25 +108,16 @@ public class HttpRequestService
 		}
 	}
 
-	/**
-	 *  This method is used to send a GET request with headers.
-	 */
 	public String doGetRequest(String url, Map<String, String> headers)
 	{
 		return doGetRequest(url, headers, new HashMap<>());
 	}
 
-	/**
-	 *  This method is used to send a GET request without any headers or query string.
-	 */
 	public String doGetRequest(String url)
 	{
 		return doGetRequest(url, new HashMap<>(), new HashMap<>());
 	}
 
-	/**
-	 *  This method is used to send a GET request with headers and query string.
-	 */
 	public String doGetRequest(String url,
 							   Map<String, String> headers,
 							   Map<String, String> params)
@@ -172,9 +153,6 @@ public class HttpRequestService
 		return "";
 	}
 
-	/**
-	 *  This method is used to send a GET request with headers and a pre-built URI.
-	 */
 	public String doGetRequest(URI uri, Map<String, String> headers)
 	{
 		try
@@ -204,11 +182,6 @@ public class HttpRequestService
 		return "";
 	}
 
-	/**
-	 *  This method is used to send a POST request.
-	 *
-	 * @return It will return body of the response.
-	 */
 	public String doPostRequest(String url, String body, Map<String, String> headers)
 	{
 		ResponseEntity<String> response = doPostRequestRaw(url, body, headers);
@@ -220,11 +193,6 @@ public class HttpRequestService
 		return "";
 	}
 
-	/**
-	 * This method is used to send a POST request.
-	 *
-	 * @return It will return ResponseEntity.
-	 */
 	public ResponseEntity<String> doPostRequestRaw(String url, String body, Map<String, String> headers)
 	{
 		ResponseEntity<String> response = executeWithRetry(() ->
